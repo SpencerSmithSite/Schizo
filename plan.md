@@ -29,31 +29,32 @@ Everything stays on your machine. No accounts, no telemetry, no cloud. Your data
 ## Feature Status
 
 ### ✅ Built
-*(nothing yet — project just initialized)*
+- Project scaffold (Tauri 2 + React + TypeScript + Vite)
+- Infinite canvas with pan and zoom
+- Cork board background texture (CSS)
+- Note, Image, Link, Screenshot, Video item types (components + types)
+- Pin handles on items
+- Rope physics (Verlet integration, sag, catenary initial shape)
+- Pin-to-pin connections (drag from pin to pin)
+- String styles (thread, yarn, wire, rope)
+- SQLite persistence (PlatformAdapter with TauriAdapter + WebAdapter fallback)
+  - Auto-save (1.5s debounce) on item/connection/viewport changes
+  - Load saved boards on startup; create default board on first run
+- Multiple boards (create, rename, delete, switch — fully persisted)
+- Ollama AI chat panel + settings (board context → local model)
+- Board switcher sidebar
 
 ### 🔨 Building
-- Project scaffold (Tauri 2 + React + TypeScript)
+*(none in progress)*
 
 ### 📋 Planned
 
-#### MVP
-- [ ] Infinite canvas with pan and zoom
-- [ ] Cork board background texture
-- [ ] Note items (text, colored background)
-- [ ] Image items (drag-and-drop files)
-- [ ] Pin handles on items
-- [ ] Rope physics (Verlet integration, sag, swing)
-- [ ] Pin-to-pin connections (drag from pin to pin)
-- [ ] String styles (thread, yarn, wire, rope — with color picker)
-- [ ] SQLite persistence (save/load board)
-- [ ] Single board
+#### MVP remaining / polish
+- [ ] Image drag-and-drop to add image items
+- [ ] Interactive testing via `npm run tauri dev`
 
 #### V1
-- [ ] Multiple boards (create, rename, delete, switch)
-- [ ] Link items (URL + OG preview: title, description, thumbnail)
-- [ ] Screenshot items (drop image + optional source URL)
-- [ ] Video items (local files; YouTube/Vimeo embed)
-- [ ] Per-connection string style (color, texture, slack)
+- [ ] Per-connection string style picker (color, texture, slack)
 - [ ] Item labels (caption)
 - [ ] Item resize handles
 - [ ] Multi-select (shift-click, rubber-band drag)
@@ -61,11 +62,10 @@ Everything stays on your machine. No accounts, no telemetry, no cloud. Your data
 - [ ] Context menu (delete item, delete connection, edit label)
 - [ ] Export board as PNG
 - [ ] PWA support (manifest + service worker)
+- [ ] Link item OG preview fetch (title, description, thumbnail via Rust HTTP)
 
 #### V1.5
-- [ ] Ollama AI chat panel (ask questions about board content)
-- [ ] Ollama settings (URL, model selector)
-- [ ] YouTube / Vimeo video items
+- [ ] YouTube / Vimeo video embed items
 - [ ] Full-text search across all boards
 - [ ] Keyboard shortcuts (N=note, L=link, C=connect mode, Del=delete, Cmd+Z=undo)
 - [ ] Rope "sleep" optimization (skip inactive ropes)
