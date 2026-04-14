@@ -4,7 +4,8 @@ import PixiBoard from "../../canvas/PixiBoard";
 import NoteItem from "../items/NoteItem";
 import ImageItem from "../items/ImageItem";
 import LinkItem from "../items/LinkItem";
-import type { Item } from "../../types/items";
+import type { ImageItem as ImageItemType, Item } from "../../types/items";
+import { nanoid } from "../../utils/nanoid";
 
 function renderItem(item: Item) {
   switch (item.type) {
@@ -28,6 +29,8 @@ export default function BoardCanvas() {
   const mode = useBoardStore((s) => s.mode);
   const clearSelection = useBoardStore((s) => s.clearSelection);
   const setPendingFromPin = useBoardStore((s) => s.setPendingFromPin);
+  const addItem = useBoardStore((s) => s.addItem);
+  const board = useBoardStore((s) => s.board);
 
   const panState = useRef<{
     active: boolean;
@@ -92,6 +95,69 @@ export default function BoardCanvas() {
     [panBy, viewport.scale, zoomTo],
   );
 
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (Array.from(e.dataTransfer.items).some((it) => it.type.startsWith("image/"))) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (!board) return;
+
+      const files = Array.from(e.dataTransfer.files).filter((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (files.length === 0) return;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dropX = e.clientX - rect.left;
+      const dropY = e.clientY - rect.top;
+
+      // Convert screen → world space
+      const worldX = (dropX - viewport.x) / viewport.scale;
+      const worldY = (dropY - viewport.y) / viewport.scale;
+
+      files.forEach((file, i) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = reader.result as string;
+          const maxZ = Math.max(
+            ...useBoardStore.getState().items.map((it) => it.zIndex),
+            0,
+          );
+          const id = nanoid();
+          const W = 200;
+          const H = 160;
+          const newItem: ImageItemType = {
+            id,
+            boardId: board.id,
+            type: "image",
+            src,
+            x: worldX - W / 2 + i * 20,
+            y: worldY - H / 2 + i * 20,
+            width: W,
+            height: H,
+            rotation: (Math.random() - 0.5) * 4,
+            zIndex: maxZ + 1 + i,
+            createdAt: Date.now(),
+            pins: [
+              { id: nanoid(), itemId: id, offsetX: 0, offsetY: -0.5 },
+              { id: nanoid(), itemId: id, offsetX: 0, offsetY: 0.5 },
+              { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: 0 },
+              { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: 0 },
+            ],
+          };
+          addItem(newItem);
+        };
+        reader.readAsDataURL(file);
+      });
+    },
+    [addItem, board, viewport.scale, viewport.x, viewport.y],
+  );
+
   return (
     <div
       style={{
@@ -105,6 +171,8 @@ export default function BoardCanvas() {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onWheel={handleWheel}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {/* Cork board background */}
       <div

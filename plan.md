@@ -50,7 +50,7 @@ Everything stays on your machine. No accounts, no telemetry, no cloud. Your data
 ### 📋 Planned
 
 #### MVP remaining / polish
-- [ ] Image drag-and-drop to add image items
+- [x] Image drag-and-drop to add image items
 - [ ] Interactive testing via `npm run tauri dev`
 
 #### V1
