@@ -23,3 +23,15 @@ src-tauri/target/
 # Logs
 *.log
 npm-debug.log*
+
+# Project plan
+plan.md
+
+# Secrets / sensitive data
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+.secrets
+config.local.*
