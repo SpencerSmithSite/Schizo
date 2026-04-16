@@ -19,6 +19,7 @@ interface BoardState {
 
   // Board lifecycle
   initBoard: (board: Board, items: Item[], connections: Connection[]) => void;
+  updateBoard: (patch: Partial<Board>) => void;
 
   // Items
   addItem: (item: Item) => void;
@@ -73,6 +74,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   initBoard: (board, items, connections) =>
     set({ board, items, connections, viewport: board.viewport }),
+
+  updateBoard: (patch) =>
+    set((s) => ({ board: s.board ? { ...s.board, ...patch } : s.board })),
 
   addItem: (item) => set((s) => ({ items: [...s.items, item] })),
 

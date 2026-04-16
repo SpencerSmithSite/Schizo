@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useBoardStore } from "./store/boardStore";
 import { useAppStore } from "./store/appStore";
 import BoardCanvas from "./components/board/BoardCanvas";
@@ -18,6 +18,8 @@ export default function App() {
   const connections = useBoardStore((s) => s.connections);
   const viewport = useBoardStore((s) => s.viewport);
   const initBoard = useBoardStore((s) => s.initBoard);
+  const updateBoard = useBoardStore((s) => s.updateBoard);
+  const updateAppBoard = useAppStore((s) => s.updateBoard);
 
   const setBoards = useAppStore((s) => s.setBoards);
   const addBoard = useAppStore((s) => s.addBoard);
@@ -26,6 +28,35 @@ export default function App() {
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [renamingBoard, setRenamingBoard] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  const startRename = useCallback(() => {
+    if (!board) return;
+    setRenameValue(board.name);
+    setRenamingBoard(true);
+    setTimeout(() => {
+      renameInputRef.current?.select();
+    }, 0);
+  }, [board]);
+
+  const commitRename = useCallback(() => {
+    if (!board) return;
+    const trimmed = renameValue.trim();
+    const name = trimmed || board.name;
+    updateBoard({ name });
+    updateAppBoard(board.id, { name });
+    setRenamingBoard(false);
+  }, [board, renameValue, updateBoard, updateAppBoard]);
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") commitRename();
+      if (e.key === "Escape") setRenamingBoard(false);
+    },
+    [commitRename],
+  );
 
   // ── Load saved boards on first mount ──────────────────────────────────────
   useEffect(() => {
@@ -112,8 +143,9 @@ export default function App() {
         position: "relative",
       }}
     >
-      {/* Board name header */}
+      {/* Board name header — double-click to rename */}
       <div
+        onDoubleClick={startRename}
         style={{
           position: "absolute",
           top: 16,
@@ -128,10 +160,35 @@ export default function App() {
           fontSize: 13,
           fontFamily: "'Caveat', cursive",
           letterSpacing: 0.5,
-          pointerEvents: "none",
+          cursor: "default",
+          userSelect: "none",
+          minWidth: 80,
+          textAlign: "center",
         }}
+        title="Double-click to rename board"
       >
-        {board.name}
+        {renamingBoard ? (
+          <input
+            ref={renameInputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={handleRenameKeyDown}
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "rgba(255,255,255,0.95)",
+              fontSize: 13,
+              fontFamily: "'Caveat', cursive",
+              letterSpacing: 0.5,
+              width: Math.max(renameValue.length * 9, 60),
+              textAlign: "center",
+            }}
+          />
+        ) : (
+          board.name
+        )}
       </div>
 
       {/* AI chat button */}
