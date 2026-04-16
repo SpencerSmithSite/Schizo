@@ -3,6 +3,7 @@ name = "schizo"
 version = "0.1.0"
 description = "Schizo — Corkboard note-taking app"
 authors = []
+license = "GPL-3.0-only"
 edition = "2021"
 
 [lib]
