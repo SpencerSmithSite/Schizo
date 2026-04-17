@@ -194,6 +194,7 @@ export default function App() {
       {/* AI chat button */}
       <button
         onClick={() => setChatOpen((o) => !o)}
+        title="Open AI chat (powered by your local Ollama server)"
         style={{
           position: "absolute",
           top: 16,

@@ -142,6 +142,7 @@ export default function OllamaChat({ onClose }: Props) {
         </div>
         <button
           onClick={onClose}
+          title="Close chat"
           style={{
             background: "none",
             border: "none",
@@ -281,6 +282,7 @@ export default function OllamaChat({ onClose }: Props) {
             <button
               onClick={send}
               disabled={loading || !input.trim()}
+              title="Send message"
               style={{
                 background: loading ? "rgba(255,102,0,0.3)" : "rgba(255,102,0,0.8)",
                 border: "none",

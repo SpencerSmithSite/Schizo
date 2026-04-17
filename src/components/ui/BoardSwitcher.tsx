@@ -130,6 +130,7 @@ export default function BoardSwitcher() {
           </span>
           <button
             onClick={createBoard}
+            title="Create a new board"
             style={{
               background: "rgba(255,255,255,0.1)",
               border: "none",
@@ -197,6 +198,7 @@ export default function BoardSwitcher() {
                     e.stopPropagation();
                     deleteBoard(b.id, b.name);
                   }}
+                  title="Delete this board"
                   style={{
                     background: "none",
                     border: "none",

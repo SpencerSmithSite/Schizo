@@ -88,6 +88,7 @@ export default function OllamaSettings({ onClose }: Props) {
           <span>🤖 Ollama Settings</span>
           <button
             onClick={onClose}
+            title="Close settings"
             style={{
               background: "none",
               border: "none",
@@ -127,6 +128,7 @@ export default function OllamaSettings({ onClose }: Props) {
           <button
             onClick={fetchModels}
             disabled={fetching}
+            title="Test connection and fetch available models from your Ollama server"
             style={{
               background: "rgba(255,255,255,0.1)",
               border: "1px solid rgba(255,255,255,0.15)",
