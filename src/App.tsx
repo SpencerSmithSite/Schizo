@@ -19,6 +19,9 @@ export default function App() {
   const viewport = useBoardStore((s) => s.viewport);
   const initBoard = useBoardStore((s) => s.initBoard);
   const updateBoard = useBoardStore((s) => s.updateBoard);
+  const selectedIds = useBoardStore((s) => s.selectedIds);
+  const removeItem = useBoardStore((s) => s.removeItem);
+  const clearSelection = useBoardStore((s) => s.clearSelection);
   const updateAppBoard = useAppStore((s) => s.updateBoard);
 
   const setBoards = useAppStore((s) => s.setBoards);
@@ -92,6 +95,25 @@ export default function App() {
       }
     })().catch(console.error);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Delete selected items with Delete / Backspace ─────────────────────────
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const ids = selectedIdsRef.current;
+      if (ids.size === 0) return;
+      e.preventDefault();
+      ids.forEach((id) => removeItem(id));
+      clearSelection();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [removeItem, clearSelection]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
