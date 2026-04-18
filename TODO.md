@@ -35,7 +35,7 @@
 ### V1
 - [ ] Per-connection string style picker (color, texture, slack)
 - [ ] Item labels (caption)
-- [ ] Item resize handles
+- [x] Item resize handles
 - [ ] Multi-select (shift-click, rubber-band drag)
 - [ ] Undo / redo (50 steps)
 - [x] Context menu (right-click: delete item, duplicate, edit label)

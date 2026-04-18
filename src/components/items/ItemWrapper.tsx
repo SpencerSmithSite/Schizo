@@ -1,9 +1,112 @@
 import { useCallback, useRef, useState } from "react";
 import type { Item } from "../../types/items";
+import type { Viewport } from "../../types/board";
 import { useBoardStore } from "../../store/boardStore";
 import PinHandle from "./PinHandle";
 import ContextMenu from "../ui/ContextMenu";
 import { nanoid } from "../../utils/nanoid";
+
+// ── Resize handle ────────────────────────────────────────────────────────────
+
+type HandlePos = "nw" | "ne" | "se" | "sw";
+
+const HANDLE_SIZE = 8;
+const MIN_W = 80;
+const MIN_H = 60;
+
+const HANDLE_STYLE: Record<HandlePos, React.CSSProperties> = {
+  nw: { top: -HANDLE_SIZE / 2, left: -HANDLE_SIZE / 2, cursor: "nw-resize" },
+  ne: { top: -HANDLE_SIZE / 2, right: -HANDLE_SIZE / 2, cursor: "ne-resize" },
+  se: { bottom: -HANDLE_SIZE / 2, right: -HANDLE_SIZE / 2, cursor: "se-resize" },
+  sw: { bottom: -HANDLE_SIZE / 2, left: -HANDLE_SIZE / 2, cursor: "sw-resize" },
+};
+
+interface ResizeHandleProps {
+  position: HandlePos;
+  item: Item;
+  viewport: Viewport;
+  updateItem: (id: string, patch: Partial<Item>) => void;
+}
+
+function ResizeHandle({ position, item, viewport, updateItem }: ResizeHandleProps) {
+  const startRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    itemX: number;
+    itemY: number;
+    itemW: number;
+    itemH: number;
+  } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    startRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      itemX: item.x,
+      itemY: item.y,
+      itemW: item.width,
+      itemH: item.height,
+    };
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!startRef.current) return;
+    const { startX, startY, itemX, itemY, itemW, itemH } = startRef.current;
+    const dx = (e.clientX - startX) / viewport.scale;
+    const dy = (e.clientY - startY) / viewport.scale;
+
+    let newX = itemX, newY = itemY, newW = itemW, newH = itemH;
+
+    if (position === "se") {
+      newW = Math.max(MIN_W, itemW + dx);
+      newH = Math.max(MIN_H, itemH + dy);
+    } else if (position === "sw") {
+      newW = Math.max(MIN_W, itemW - dx);
+      newH = Math.max(MIN_H, itemH + dy);
+      newX = itemX + itemW - newW;
+    } else if (position === "ne") {
+      newW = Math.max(MIN_W, itemW + dx);
+      newH = Math.max(MIN_H, itemH - dy);
+      newY = itemY + itemH - newH;
+    } else {
+      // nw
+      newW = Math.max(MIN_W, itemW - dx);
+      newH = Math.max(MIN_H, itemH - dy);
+      newX = itemX + itemW - newW;
+      newY = itemY + itemH - newH;
+    }
+
+    updateItem(item.id, { x: newX, y: newY, width: newW, height: newH });
+  };
+
+  const onPointerUp = () => {
+    startRef.current = null;
+  };
+
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      style={{
+        position: "absolute",
+        width: HANDLE_SIZE,
+        height: HANDLE_SIZE,
+        background: "#fff",
+        border: "1.5px solid rgba(59, 130, 246, 0.9)",
+        borderRadius: 2,
+        zIndex: 10,
+        ...HANDLE_STYLE[position],
+      }}
+    />
+  );
+}
+
+// ── Item wrapper ─────────────────────────────────────────────────────────────
 
 interface Props {
   item: Item;
@@ -88,7 +191,6 @@ export default function ItemWrapper({ item, children }: Props) {
   );
 
   const handleDelete = useCallback(() => {
-    // Delete all selected items if this one is selected, otherwise just this one
     if (selectedIds.has(item.id) && selectedIds.size > 1) {
       selectedIds.forEach((id) => removeItem(id));
       clearSelection();
@@ -100,19 +202,16 @@ export default function ItemWrapper({ item, children }: Props) {
 
   const handleDuplicate = useCallback(() => {
     const OFFSET = 24;
-    const newItem = {
+    const newId = nanoid();
+    addItem({
       ...item,
-      id: nanoid(),
+      id: newId,
       x: item.x + OFFSET,
       y: item.y + OFFSET,
       zIndex: item.zIndex + 1,
       createdAt: Date.now(),
-      pins: item.pins.map((p) => ({ ...p, id: nanoid(), itemId: "" as string })),
-    };
-    // Fix pin itemIds after we have the new id
-    const newId = newItem.id;
-    newItem.pins = newItem.pins.map((p) => ({ ...p, itemId: newId }));
-    addItem(newItem as Item);
+      pins: item.pins.map((p) => ({ ...p, id: nanoid(), itemId: newId })),
+    } as Item);
     selectItem(newId, false);
   }, [item, addItem, selectItem]);
 
@@ -147,14 +246,22 @@ export default function ItemWrapper({ item, children }: Props) {
         zIndex: item.zIndex,
         cursor: mode === "connect" ? "crosshair" : "grab",
         userSelect: "none",
-        outline: isSelected
-          ? "2px solid rgba(59, 130, 246, 0.8)"
-          : "none",
+        outline: isSelected ? "2px solid rgba(59, 130, 246, 0.8)" : "none",
         outlineOffset: "3px",
         borderRadius: "2px",
       }}
     >
       {children}
+
+      {/* Corner resize handles — only when selected and in select mode */}
+      {isSelected && mode === "select" && (
+        <>
+          <ResizeHandle position="nw" item={item} viewport={viewport} updateItem={updateItem} />
+          <ResizeHandle position="ne" item={item} viewport={viewport} updateItem={updateItem} />
+          <ResizeHandle position="se" item={item} viewport={viewport} updateItem={updateItem} />
+          <ResizeHandle position="sw" item={item} viewport={viewport} updateItem={updateItem} />
+        </>
+      )}
 
       {/* Pin handles — shown when hovered or in connect mode */}
       {(hovered || mode === "connect") &&
@@ -220,16 +327,18 @@ export default function ItemWrapper({ item, children }: Props) {
             },
             {
               icon: "⧉",
-              label: selectedIds.has(item.id) && selectedIds.size > 1
-                ? `Duplicate ${selectedIds.size} items`
-                : "Duplicate",
+              label:
+                selectedIds.has(item.id) && selectedIds.size > 1
+                  ? `Duplicate ${selectedIds.size} items`
+                  : "Duplicate",
               onClick: () => {
                 if (selectedIds.has(item.id) && selectedIds.size > 1) {
-                  // Duplicate all selected
                   const OFFSET = 24;
                   const newIds: string[] = [];
                   selectedIds.forEach((sid) => {
-                    const src = useBoardStore.getState().items.find((it) => it.id === sid);
+                    const src = useBoardStore
+                      .getState()
+                      .items.find((it) => it.id === sid);
                     if (!src) return;
                     const newId = nanoid();
                     newIds.push(newId);
@@ -240,7 +349,11 @@ export default function ItemWrapper({ item, children }: Props) {
                       y: src.y + OFFSET,
                       zIndex: src.zIndex + 1,
                       createdAt: Date.now(),
-                      pins: src.pins.map((p) => ({ ...p, id: nanoid(), itemId: newId })),
+                      pins: src.pins.map((p) => ({
+                        ...p,
+                        id: nanoid(),
+                        itemId: newId,
+                      })),
                     } as Item);
                   });
                   clearSelection();
@@ -252,9 +365,10 @@ export default function ItemWrapper({ item, children }: Props) {
             },
             {
               icon: "🗑",
-              label: selectedIds.has(item.id) && selectedIds.size > 1
-                ? `Delete ${selectedIds.size} items`
-                : "Delete",
+              label:
+                selectedIds.has(item.id) && selectedIds.size > 1
+                  ? `Delete ${selectedIds.size} items`
+                  : "Delete",
               onClick: handleDelete,
               danger: true,
             },
