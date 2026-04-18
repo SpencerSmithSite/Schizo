@@ -36,7 +36,7 @@
 - [ ] Per-connection string style picker (color, texture, slack)
 - [ ] Item labels (caption)
 - [x] Item resize handles
-- [ ] Multi-select (shift-click, rubber-band drag)
+- [x] Multi-select (shift-click, rubber-band drag)
 - [ ] Undo / redo (50 steps)
 - [x] Context menu (right-click: delete item, duplicate, edit label)
 - [ ] Export board as PNG

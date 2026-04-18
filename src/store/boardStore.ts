@@ -34,6 +34,10 @@ interface BoardState {
   // Selection
   selectedIds: Set<string>;
   selectItem: (id: string, additive?: boolean) => void;
+  selectItemsInRect: (
+    rect: { x: number; y: number; w: number; h: number },
+    additive?: boolean,
+  ) => void;
   clearSelection: () => void;
 
   // Interaction mode
@@ -144,6 +148,28 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         return { selectedIds: next };
       }
       return { selectedIds: new Set([id]) };
+    }),
+
+  selectItemsInRect: (rect, additive = false) =>
+    set((s) => {
+      const matched = new Set<string>();
+      for (const item of s.items) {
+        // AABB intersection (ignore rotation — standard board-app behaviour)
+        if (
+          item.x < rect.x + rect.w &&
+          item.x + item.width > rect.x &&
+          item.y < rect.y + rect.h &&
+          item.y + item.height > rect.y
+        ) {
+          matched.add(item.id);
+        }
+      }
+      if (additive) {
+        const next = new Set(s.selectedIds);
+        matched.forEach((id) => next.add(id));
+        return { selectedIds: next };
+      }
+      return { selectedIds: matched };
     }),
 
   clearSelection: () => set({ selectedIds: new Set() }),

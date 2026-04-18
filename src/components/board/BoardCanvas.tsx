@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useBoardStore } from "../../store/boardStore";
 import PixiBoard from "../../canvas/PixiBoard";
 import NoteItem from "../items/NoteItem";
@@ -21,6 +21,16 @@ function renderItem(item: Item) {
   }
 }
 
+// Screen-space marquee rect (client coords)
+interface MarqueeRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const DRAG_THRESHOLD = 5; // px before marquee activates
+
 export default function BoardCanvas() {
   const viewport = useBoardStore((s) => s.viewport);
   const panBy = useBoardStore((s) => s.panBy);
@@ -28,28 +38,42 @@ export default function BoardCanvas() {
   const items = useBoardStore((s) => s.items);
   const mode = useBoardStore((s) => s.mode);
   const clearSelection = useBoardStore((s) => s.clearSelection);
+  const selectItemsInRect = useBoardStore((s) => s.selectItemsInRect);
   const setPendingFromPin = useBoardStore((s) => s.setPendingFromPin);
   const addItem = useBoardStore((s) => s.addItem);
   const board = useBoardStore((s) => s.board);
 
+  // Pan state (used in pan mode)
   const panState = useRef<{
-    active: boolean;
     startX: number;
     startY: number;
     vpX: number;
     vpY: number;
   } | null>(null);
 
+  // Marquee state (used in select mode drag)
+  const marqueeStart = useRef<{ x: number; y: number } | null>(null);
+  const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
+
+  // Ref to the canvas root so we can subtract its rect during pointerup
+  const canvasRef = useRef<HTMLDivElement>(null);
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      // Only react to clicks directly on the canvas background (not on items)
       if (e.target !== e.currentTarget) return;
-      clearSelection();
+
       setPendingFromPin(null);
 
-      if (mode === "select" || mode === "pan") {
+      if (mode === "select") {
+        if (!e.shiftKey) clearSelection();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        marqueeStart.current = { x: e.clientX, y: e.clientY };
+        setMarquee(null);
+      } else if (mode === "pan") {
+        clearSelection();
         e.currentTarget.setPointerCapture(e.pointerId);
         panState.current = {
-          active: true,
           startX: e.clientX,
           startY: e.clientY,
           vpX: viewport.x,
@@ -62,20 +86,74 @@ export default function BoardCanvas() {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!panState.current?.active) return;
-      const dx = e.clientX - panState.current.startX;
-      const dy = e.clientY - panState.current.startY;
-      panBy(
-        dx - (viewport.x - panState.current.vpX),
-        dy - (viewport.y - panState.current.vpY),
-      );
+      // Pan mode
+      if (panState.current) {
+        const dx = e.clientX - panState.current.startX;
+        const dy = e.clientY - panState.current.startY;
+        panBy(
+          dx - (viewport.x - panState.current.vpX),
+          dy - (viewport.y - panState.current.vpY),
+        );
+        return;
+      }
+
+      // Select mode — draw marquee once past threshold
+      if (marqueeStart.current) {
+        const dx = e.clientX - marqueeStart.current.x;
+        const dy = e.clientY - marqueeStart.current.y;
+        if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+          setMarquee({
+            x: Math.min(e.clientX, marqueeStart.current.x),
+            y: Math.min(e.clientY, marqueeStart.current.y),
+            w: Math.abs(dx),
+            h: Math.abs(dy),
+          });
+        }
+      }
     },
     [panBy, viewport.x, viewport.y],
   );
 
-  const handlePointerUp = useCallback(() => {
-    panState.current = null;
-  }, []);
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      // Pan — just clear
+      if (panState.current) {
+        panState.current = null;
+        return;
+      }
+
+      // Select — commit marquee if active
+      if (marqueeStart.current) {
+        const start = marqueeStart.current;
+        marqueeStart.current = null;
+
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        const active =
+          Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD;
+
+        setMarquee(null);
+
+        if (active) {
+          // Convert screen-space marquee → world space
+          const canvasRect = canvasRef.current?.getBoundingClientRect() ?? {
+            left: 0,
+            top: 0,
+          };
+          const sx = Math.min(start.x, e.clientX) - canvasRect.left;
+          const sy = Math.min(start.y, e.clientY) - canvasRect.top;
+          const sw = Math.abs(dx);
+          const sh = Math.abs(dy);
+          const wx = (sx - viewport.x) / viewport.scale;
+          const wy = (sy - viewport.y) / viewport.scale;
+          const ww = sw / viewport.scale;
+          const wh = sh / viewport.scale;
+          selectItemsInRect({ x: wx, y: wy, w: ww, h: wh }, e.shiftKey);
+        }
+      }
+    },
+    [selectItemsInRect, viewport.scale, viewport.x, viewport.y],
+  );
 
   const handleWheel = useCallback(
     (e: React.WheelEvent<HTMLDivElement>) => {
@@ -85,7 +163,6 @@ export default function BoardCanvas() {
       const cy = e.clientY - rect.top;
 
       if (e.ctrlKey || e.metaKey) {
-        // Pinch-to-zoom
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
         zoomTo(viewport.scale * delta, cx, cy);
       } else {
@@ -115,8 +192,6 @@ export default function BoardCanvas() {
       const rect = e.currentTarget.getBoundingClientRect();
       const dropX = e.clientX - rect.left;
       const dropY = e.clientY - rect.top;
-
-      // Convert screen → world space
       const worldX = (dropX - viewport.x) / viewport.scale;
       const worldY = (dropY - viewport.y) / viewport.scale;
 
@@ -160,6 +235,7 @@ export default function BoardCanvas() {
 
   return (
     <div
+      ref={canvasRef}
       style={{
         position: "relative",
         width: "100%",
@@ -213,6 +289,24 @@ export default function BoardCanvas() {
       >
         {items.map(renderItem)}
       </div>
+
+      {/* Marquee selection rectangle (screen space, pointer-events: none) */}
+      {marquee && mode === "select" && (
+        <div
+          style={{
+            position: "fixed",
+            left: marquee.x,
+            top: marquee.y,
+            width: marquee.w,
+            height: marquee.h,
+            background: "rgba(59, 130, 246, 0.08)",
+            border: "1px solid rgba(59, 130, 246, 0.55)",
+            borderRadius: 2,
+            pointerEvents: "none",
+            zIndex: 50,
+          }}
+        />
+      )}
     </div>
   );
 }
