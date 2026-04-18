@@ -22,6 +22,8 @@ export default function App() {
   const selectedIds = useBoardStore((s) => s.selectedIds);
   const removeItem = useBoardStore((s) => s.removeItem);
   const clearSelection = useBoardStore((s) => s.clearSelection);
+  const undo = useBoardStore((s) => s.undo);
+  const redo = useBoardStore((s) => s.redo);
   const updateAppBoard = useAppStore((s) => s.updateBoard);
 
   const setBoards = useAppStore((s) => s.setBoards);
@@ -96,15 +98,37 @@ export default function App() {
     })().catch(console.error);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Delete selected items with Delete / Backspace ─────────────────────────
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Delete" && e.key !== "Backspace") return;
       const tag = (document.activeElement as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const inInput = tag === "INPUT" || tag === "TEXTAREA";
+
+      // Undo: Cmd+Z (Mac) / Ctrl+Z (Win/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        if (inInput) return;
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Cmd+Shift+Z or Cmd+Y
+      if (
+        ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "z") ||
+        ((e.metaKey || e.ctrlKey) && e.key === "y")
+      ) {
+        if (inInput) return;
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Delete selected items
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (inInput) return;
       const ids = selectedIdsRef.current;
       if (ids.size === 0) return;
       e.preventDefault();
@@ -113,7 +137,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [removeItem, clearSelection]);
+  }, [removeItem, clearSelection, undo, redo]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -26,9 +26,10 @@ interface ResizeHandleProps {
   item: Item;
   viewport: Viewport;
   updateItem: (id: string, patch: Partial<Item>) => void;
+  pushHistory: () => void;
 }
 
-function ResizeHandle({ position, item, viewport, updateItem }: ResizeHandleProps) {
+function ResizeHandle({ position, item, viewport, updateItem, pushHistory }: ResizeHandleProps) {
   const startRef = useRef<{
     pointerId: number;
     startX: number;
@@ -42,6 +43,7 @@ function ResizeHandle({ position, item, viewport, updateItem }: ResizeHandleProp
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
+    pushHistory(); // snapshot before resize gesture
     startRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -122,6 +124,7 @@ export default function ItemWrapper({ item, children }: Props) {
   const addItem = useBoardStore((s) => s.addItem);
   const bringToFront = useBoardStore((s) => s.bringToFront);
   const clearSelection = useBoardStore((s) => s.clearSelection);
+  const pushHistory = useBoardStore((s) => s.pushHistory);
   const mode = useBoardStore((s) => s.mode);
 
   const isSelected = selectedIds.has(item.id);
@@ -145,6 +148,7 @@ export default function ItemWrapper({ item, children }: Props) {
       if (mode === "connect") return;
       e.stopPropagation();
       e.currentTarget.setPointerCapture(e.pointerId);
+      pushHistory(); // snapshot before drag gesture
       bringToFront(item.id);
       selectItem(item.id, e.shiftKey);
       dragStart.current = {
@@ -156,7 +160,7 @@ export default function ItemWrapper({ item, children }: Props) {
       };
       isDragging.current = false;
     },
-    [mode, bringToFront, item.id, item.x, item.y, selectItem],
+    [mode, bringToFront, item.id, item.x, item.y, selectItem, pushHistory],
   );
 
   const handlePointerMove = useCallback(
@@ -256,10 +260,10 @@ export default function ItemWrapper({ item, children }: Props) {
       {/* Corner resize handles — only when selected and in select mode */}
       {isSelected && mode === "select" && (
         <>
-          <ResizeHandle position="nw" item={item} viewport={viewport} updateItem={updateItem} />
-          <ResizeHandle position="ne" item={item} viewport={viewport} updateItem={updateItem} />
-          <ResizeHandle position="se" item={item} viewport={viewport} updateItem={updateItem} />
-          <ResizeHandle position="sw" item={item} viewport={viewport} updateItem={updateItem} />
+          <ResizeHandle position="nw" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
+          <ResizeHandle position="ne" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
+          <ResizeHandle position="se" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
+          <ResizeHandle position="sw" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
         </>
       )}
 

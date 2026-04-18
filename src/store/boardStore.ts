@@ -5,6 +5,20 @@ import type { Connection } from "../types/connections";
 import { DEFAULT_STRING_STYLE } from "../types/connections";
 import { nanoid } from "../utils/nanoid";
 
+const HISTORY_LIMIT = 50;
+
+type Snapshot = { items: Item[]; connections: Connection[] };
+
+function snapshot(s: { items: Item[]; connections: Connection[] }): Snapshot {
+  return { items: s.items, connections: s.connections };
+}
+
+function pushPast(past: Snapshot[], snap: Snapshot): Snapshot[] {
+  const next = [...past, snap];
+  if (next.length > HISTORY_LIMIT) next.shift();
+  return next;
+}
+
 interface BoardState {
   // Active board
   board: Board | null;
@@ -47,6 +61,14 @@ interface BoardState {
   // Pending connection drag
   pendingFromPin: Pin | null;
   setPendingFromPin: (pin: Pin | null) => void;
+
+  // History (undo / redo)
+  past: Snapshot[];
+  future: Snapshot[];
+  /** Call once before a continuous gesture (drag, resize) begins. */
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -77,13 +99,21 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }),
 
   initBoard: (board, items, connections) =>
-    set({ board, items, connections, viewport: board.viewport }),
+    set({ board, items, connections, viewport: board.viewport, past: [], future: [] }),
 
   updateBoard: (patch) =>
     set((s) => ({ board: s.board ? { ...s.board, ...patch } : s.board })),
 
-  addItem: (item) => set((s) => ({ items: [...s.items, item] })),
+  // addItem snapshots history inline (discrete, single-frame action)
+  addItem: (item) =>
+    set((s) => ({
+      items: [...s.items, item],
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+    })),
 
+  // updateItem does NOT snapshot — callers must call pushHistory() before a
+  // continuous gesture (drag / resize) so we get one undo step per gesture.
   updateItem: (id, patch) =>
     set((s) => ({
       items: s.items.map((it) =>
@@ -91,6 +121,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       ),
     })),
 
+  // removeItem snapshots history inline
   removeItem: (id) =>
     set((s) => ({
       items: s.items.filter((it) => it.id !== id),
@@ -98,12 +129,13 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         (c) =>
           !s.items
             .find((it) => it.id === id)
-            ?.pins.some(
-              (p) => p.id === c.fromPinId || p.id === c.toPinId,
-            ),
+            ?.pins.some((p) => p.id === c.fromPinId || p.id === c.toPinId),
       ),
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
     })),
 
+  // bringToFront is a cosmetic z-order change — not worth polluting undo history
   bringToFront: (id) =>
     set((s) => {
       const maxZ = Math.max(...s.items.map((it) => it.zIndex), 0);
@@ -114,10 +146,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
     }),
 
+  // addConnection snapshots history inline
   addConnection: (fromPinId, toPinId) => {
     const { connections, board } = get();
     if (!board) return;
-    // Prevent duplicate connections between same pins
     const exists = connections.some(
       (c) =>
         (c.fromPinId === fromPinId && c.toPinId === toPinId) ||
@@ -132,11 +164,20 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       style: { ...DEFAULT_STRING_STYLE },
       createdAt: Date.now(),
     };
-    set((s) => ({ connections: [...s.connections, conn] }));
+    set((s) => ({
+      connections: [...s.connections, conn],
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+    }));
   },
 
+  // removeConnection snapshots history inline
   removeConnection: (id) =>
-    set((s) => ({ connections: s.connections.filter((c) => c.id !== id) })),
+    set((s) => ({
+      connections: s.connections.filter((c) => c.id !== id),
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+    })),
 
   selectedIds: new Set(),
 
@@ -154,7 +195,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     set((s) => {
       const matched = new Set<string>();
       for (const item of s.items) {
-        // AABB intersection (ignore rotation — standard board-app behaviour)
         if (
           item.x < rect.x + rect.w &&
           item.x + item.width > rect.x &&
@@ -179,4 +219,39 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   pendingFromPin: null,
   setPendingFromPin: (pin) => set({ pendingFromPin: pin }),
+
+  // ── History ────────────────────────────────────────────────────────────────
+
+  past: [],
+  future: [],
+
+  pushHistory: () =>
+    set((s) => ({
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+    })),
+
+  undo: () =>
+    set((s) => {
+      if (s.past.length === 0) return s;
+      const prev = s.past[s.past.length - 1];
+      return {
+        ...prev,
+        past: s.past.slice(0, -1),
+        future: [snapshot(s), ...s.future],
+        selectedIds: new Set(), // clear selection to avoid dangling refs
+      };
+    }),
+
+  redo: () =>
+    set((s) => {
+      if (s.future.length === 0) return s;
+      const next = s.future[0];
+      return {
+        ...next,
+        past: pushPast(s.past, snapshot(s)),
+        future: s.future.slice(1),
+        selectedIds: new Set(),
+      };
+    }),
 }));

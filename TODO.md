@@ -37,7 +37,7 @@
 - [ ] Item labels (caption)
 - [x] Item resize handles
 - [x] Multi-select (shift-click, rubber-band drag)
-- [ ] Undo / redo (50 steps)
+- [x] Undo / redo (50 steps)
 - [x] Context menu (right-click: delete item, duplicate, edit label)
 - [ ] Export board as PNG
 - [ ] PWA support (manifest + service worker)
