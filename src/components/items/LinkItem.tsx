@@ -128,6 +128,21 @@ export default function LinkItem({ item }: Props) {
         >
           {item.url}
         </div>
+
+        {item.label && (
+          <div
+            style={{
+              padding: "3px 10px 5px",
+              fontSize: 11,
+              color: "#555",
+              textAlign: "center",
+              fontFamily: "'Caveat', cursive",
+              borderTop: "1px solid rgba(0,0,0,0.04)",
+            }}
+          >
+            {item.label}
+          </div>
+        )}
       </div>
     </ItemWrapper>
   );

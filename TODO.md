@@ -34,7 +34,7 @@
 
 ### V1
 - [ ] Per-connection string style picker (color, texture, slack)
-- [ ] Item labels (caption)
+- [x] Item labels (caption)
 - [x] Item resize handles
 - [x] Multi-select (shift-click, rubber-band drag)
 - [x] Undo / redo (50 steps)
@@ -46,7 +46,7 @@
 ### V1.5
 - [ ] YouTube / Vimeo video embed items
 - [ ] Full-text search across all boards
-- [ ] Keyboard shortcuts (N=note, L=link, C=connect mode, Cmd+Z=undo)
+- [x] Keyboard shortcuts (N=note, L=link, C=connect mode, Cmd+Z=undo)
 - [ ] Rope "sleep" optimization (skip inactive ropes)
 
 ### V2

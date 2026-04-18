@@ -9,6 +9,7 @@ import OllamaSettings from "./components/ui/OllamaSettings";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
 import type { Board } from "./types/board";
+import type { NoteItem, LinkItem } from "./types/items";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 
@@ -20,8 +21,10 @@ export default function App() {
   const initBoard = useBoardStore((s) => s.initBoard);
   const updateBoard = useBoardStore((s) => s.updateBoard);
   const selectedIds = useBoardStore((s) => s.selectedIds);
+  const addItem = useBoardStore((s) => s.addItem);
   const removeItem = useBoardStore((s) => s.removeItem);
   const clearSelection = useBoardStore((s) => s.clearSelection);
+  const setMode = useBoardStore((s) => s.setMode);
   const undo = useBoardStore((s) => s.undo);
   const redo = useBoardStore((s) => s.redo);
   const updateAppBoard = useAppStore((s) => s.updateBoard);
@@ -107,7 +110,7 @@ export default function App() {
       const tag = (document.activeElement as HTMLElement)?.tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA";
 
-      // Undo: Cmd+Z (Mac) / Ctrl+Z (Win/Linux)
+      // Undo: Cmd+Z / Ctrl+Z
       if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
         if (inInput) return;
         e.preventDefault();
@@ -115,7 +118,7 @@ export default function App() {
         return;
       }
 
-      // Redo: Cmd+Shift+Z or Cmd+Y
+      // Redo: Cmd+Shift+Z / Ctrl+Y
       if (
         ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "z") ||
         ((e.metaKey || e.ctrlKey) && e.key === "y")
@@ -126,9 +129,94 @@ export default function App() {
         return;
       }
 
-      // Delete selected items
+      // Skip remaining shortcuts when a modifier is held or focus is in an input
+      if (e.metaKey || e.ctrlKey || e.altKey || inInput) return;
+
+      // N — add note
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        const { board, viewport } = useBoardStore.getState();
+        if (!board) return;
+        const id = nanoid();
+        const cx = (window.innerWidth / 2 - viewport.x) / viewport.scale - 80;
+        const cy = (window.innerHeight / 2 - viewport.y) / viewport.scale - 80;
+        const note: NoteItem = {
+          id,
+          boardId: board.id,
+          type: "note",
+          x: cx + (Math.random() - 0.5) * 60,
+          y: cy + (Math.random() - 0.5) * 60,
+          width: 160,
+          height: 160,
+          rotation: (Math.random() - 0.5) * 6,
+          zIndex: Date.now(),
+          createdAt: Date.now(),
+          content: "",
+          color: "#fef08a",
+          fontSize: 16,
+          pins: [
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: 0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: 0.5 },
+          ],
+        };
+        addItem(note);
+        return;
+      }
+
+      // L — add link
+      if (e.key === "l" || e.key === "L") {
+        e.preventDefault();
+        const { board, viewport } = useBoardStore.getState();
+        if (!board) return;
+        const url = window.prompt("Enter URL:");
+        if (!url) return;
+        const id = nanoid();
+        const cx = (window.innerWidth / 2 - viewport.x) / viewport.scale - 110;
+        const cy = (window.innerHeight / 2 - viewport.y) / viewport.scale - 75;
+        const link: LinkItem = {
+          id,
+          boardId: board.id,
+          type: "link",
+          x: cx + (Math.random() - 0.5) * 60,
+          y: cy + (Math.random() - 0.5) * 60,
+          width: 220,
+          height: 150,
+          rotation: (Math.random() - 0.5) * 4,
+          zIndex: Date.now(),
+          createdAt: Date.now(),
+          url,
+          title: url,
+          pins: [
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: 0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: 0.5 },
+          ],
+        };
+        addItem(link);
+        return;
+      }
+
+      // C — connect mode toggle
+      if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        const { mode } = useBoardStore.getState();
+        setMode(mode === "connect" ? "select" : "connect");
+        return;
+      }
+
+      // Escape — back to select mode
+      if (e.key === "Escape") {
+        setMode("select");
+        return;
+      }
+
+      // Delete / Backspace — remove selected items
       if (e.key !== "Delete" && e.key !== "Backspace") return;
-      if (inInput) return;
       const ids = selectedIdsRef.current;
       if (ids.size === 0) return;
       e.preventDefault();
@@ -137,7 +225,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [removeItem, clearSelection, undo, redo]);
+  }, [addItem, removeItem, clearSelection, setMode, undo, redo]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
