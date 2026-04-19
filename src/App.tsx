@@ -4,6 +4,7 @@ import { useAppStore } from "./store/appStore";
 import BoardCanvas from "./components/board/BoardCanvas";
 import BoardToolbar from "./components/board/BoardToolbar";
 import BoardSwitcher from "./components/ui/BoardSwitcher";
+import ConnectionStylePanel from "./components/board/ConnectionStylePanel";
 import OllamaChat from "./components/ui/OllamaChat";
 import OllamaSettings from "./components/ui/OllamaSettings";
 import { getAdapter } from "./utils/adapter";
@@ -27,6 +28,8 @@ export default function App() {
   const setMode = useBoardStore((s) => s.setMode);
   const undo = useBoardStore((s) => s.undo);
   const redo = useBoardStore((s) => s.redo);
+  const removeConnection = useBoardStore((s) => s.removeConnection);
+  const setSelectedConnection = useBoardStore((s) => s.setSelectedConnection);
   const updateAppBoard = useAppStore((s) => s.updateBoard);
 
   const setBoards = useAppStore((s) => s.setBoards);
@@ -209,23 +212,30 @@ export default function App() {
         return;
       }
 
-      // Escape — back to select mode
+      // Escape — back to select mode, deselect connection
       if (e.key === "Escape") {
         setMode("select");
+        setSelectedConnection(null);
         return;
       }
 
-      // Delete / Backspace — remove selected items
+      // Delete / Backspace — remove selected items or selected connection
       if (e.key !== "Delete" && e.key !== "Backspace") return;
+      e.preventDefault();
+      const { selectedConnectionId } = useBoardStore.getState();
+      if (selectedConnectionId) {
+        removeConnection(selectedConnectionId);
+        setSelectedConnection(null);
+        return;
+      }
       const ids = selectedIdsRef.current;
       if (ids.size === 0) return;
-      e.preventDefault();
       ids.forEach((id) => removeItem(id));
       clearSelection();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addItem, removeItem, clearSelection, setMode, undo, redo]);
+  }, [addItem, removeItem, clearSelection, setMode, undo, redo, removeConnection, setSelectedConnection]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -356,6 +366,7 @@ export default function App() {
       <BoardCanvas />
       <BoardToolbar />
       <BoardSwitcher />
+      <ConnectionStylePanel />
 
       {chatOpen && <OllamaChat onClose={() => setChatOpen(false)} />}
       {settingsOpen && <OllamaSettings onClose={() => setSettingsOpen(false)} />}

@@ -2,6 +2,19 @@
  * RopeManager: creates, updates, and removes ropes for all connections
  * on the active board. Called every animation frame.
  */
+
+/** Point-to-segment distance (world space). */
+function ptSegDist(
+  px: number, py: number,
+  ax: number, ay: number,
+  bx: number, by: number,
+): number {
+  const dx = bx - ax, dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - ax, py - ay);
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
 import type { Connection } from "../types/connections";
 import type { Item } from "../types/items";
 import { createRope, stepRope, wakeRope, type Rope } from "./RopeSimulation";
@@ -89,5 +102,30 @@ export class RopeManager {
 
   getRope(connectionId: string): Rope | undefined {
     return this.ropes.get(connectionId);
+  }
+
+  /**
+   * Return the connection ID of the rope closest to (worldX, worldY),
+   * or null if nothing is within `threshold` world-space pixels.
+   */
+  hitTest(worldX: number, worldY: number, threshold: number): string | null {
+    let bestId: string | null = null;
+    let bestDist = threshold;
+
+    for (const [connId, rope] of this.ropes) {
+      const { nodes } = rope;
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const d = ptSegDist(
+          worldX, worldY,
+          nodes[i].x, nodes[i].y,
+          nodes[i + 1].x, nodes[i + 1].y,
+        );
+        if (d < bestDist) {
+          bestDist = d;
+          bestId = connId;
+        }
+      }
+    }
+    return bestId;
   }
 }

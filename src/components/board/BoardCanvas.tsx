@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useBoardStore } from "../../store/boardStore";
-import PixiBoard from "../../canvas/PixiBoard";
+import PixiBoard, { ropeManager } from "../../canvas/PixiBoard";
 import NoteItem from "../items/NoteItem";
 import ImageItem from "../items/ImageItem";
 import LinkItem from "../items/LinkItem";
@@ -40,6 +40,7 @@ export default function BoardCanvas() {
   const clearSelection = useBoardStore((s) => s.clearSelection);
   const selectItemsInRect = useBoardStore((s) => s.selectItemsInRect);
   const setPendingFromPin = useBoardStore((s) => s.setPendingFromPin);
+  const setSelectedConnection = useBoardStore((s) => s.setSelectedConnection);
   const addItem = useBoardStore((s) => s.addItem);
   const board = useBoardStore((s) => s.board);
 
@@ -72,6 +73,7 @@ export default function BoardCanvas() {
         setMarquee(null);
       } else if (mode === "pan") {
         clearSelection();
+        setSelectedConnection(null);
         e.currentTarget.setPointerCapture(e.pointerId);
         panState.current = {
           startX: e.clientX,
@@ -81,7 +83,7 @@ export default function BoardCanvas() {
         };
       }
     },
-    [clearSelection, mode, setPendingFromPin, viewport.x, viewport.y],
+    [clearSelection, mode, setPendingFromPin, setSelectedConnection, viewport.x, viewport.y],
   );
 
   const handlePointerMove = useCallback(
@@ -122,7 +124,7 @@ export default function BoardCanvas() {
         return;
       }
 
-      // Select — commit marquee if active
+      // Select — commit marquee if active, or hit-test ropes on click
       if (marqueeStart.current) {
         const start = marqueeStart.current;
         marqueeStart.current = null;
@@ -149,10 +151,24 @@ export default function BoardCanvas() {
           const ww = sw / viewport.scale;
           const wh = sh / viewport.scale;
           selectItemsInRect({ x: wx, y: wy, w: ww, h: wh }, e.shiftKey);
+          setSelectedConnection(null);
+        } else {
+          // Simple click on canvas background — hit-test ropes
+          const canvasRect = canvasRef.current?.getBoundingClientRect() ?? {
+            left: 0,
+            top: 0,
+          };
+          const cx = e.clientX - canvasRect.left;
+          const cy = e.clientY - canvasRect.top;
+          const wx = (cx - viewport.x) / viewport.scale;
+          const wy = (cy - viewport.y) / viewport.scale;
+          const threshold = 8 / viewport.scale;
+          const hitId = ropeManager.hitTest(wx, wy, threshold);
+          setSelectedConnection(hitId);
         }
       }
     },
-    [selectItemsInRect, viewport.scale, viewport.x, viewport.y],
+    [selectItemsInRect, setSelectedConnection, viewport.scale, viewport.x, viewport.y],
   );
 
   const handleWheel = useCallback(

@@ -6,25 +6,15 @@ import type { Connection } from "../types/connections";
 import type { Item } from "../types/items";
 import type { Rope } from "../physics/RopeSimulation";
 
-const ropeManager = new RopeManager();
+export const ropeManager = new RopeManager();
 
-function drawRope(
-  gfx: PIXI.Graphics,
-  rope: Rope,
-  conn: Connection,
-): void {
-  const { nodes } = rope;
+/** Build the rope path onto the graphics object (without stroking). */
+function buildRopePath(gfx: PIXI.Graphics, nodes: Rope["nodes"]): void {
   if (nodes.length < 2) return;
-
-  const color = parseInt(conn.style.color.replace("#", ""), 16);
-  const thickness = conn.style.thickness;
-
   gfx.moveTo(nodes[0].x, nodes[0].y);
-
   if (nodes.length === 2) {
     gfx.lineTo(nodes[1].x, nodes[1].y);
   } else {
-    // Smooth catmull-rom approximation using quadratic bezier
     for (let i = 0; i < nodes.length - 1; i++) {
       const curr = nodes[i];
       const next = nodes[i + 1];
@@ -40,8 +30,29 @@ function drawRope(
       }
     }
   }
+}
 
-  // Yarn style: draw a slightly thicker line with a lighter parallel stroke
+function drawRope(
+  gfx: PIXI.Graphics,
+  rope: Rope,
+  conn: Connection,
+  selected: boolean,
+): void {
+  const { nodes } = rope;
+  if (nodes.length < 2) return;
+
+  const color = parseInt(conn.style.color.replace("#", ""), 16);
+  const thickness = conn.style.thickness;
+
+  // ── Selection glow ──────────────────────────────────────────────────────
+  if (selected) {
+    buildRopePath(gfx, nodes);
+    gfx.stroke({ color: 0x3b82f6, width: thickness + 8, alpha: 0.35 });
+  }
+
+  // ── Main rope stroke ────────────────────────────────────────────────────
+  buildRopePath(gfx, nodes);
+
   if (conn.style.texture === "yarn") {
     gfx.stroke({ color, width: thickness + 1, alpha: 0.9 });
   } else if (conn.style.texture === "wire") {
@@ -68,11 +79,13 @@ export default function PixiBoard() {
 
   const connectionsRef = useRef<Connection[]>([]);
   const itemsRef = useRef<Item[]>([]);
+  const selectedConnIdRef = useRef<string | null>(null);
 
   // Keep refs in sync with store without re-running main effect
   useBoardStore.subscribe((s) => {
     connectionsRef.current = s.connections;
     itemsRef.current = s.items;
+    selectedConnIdRef.current = s.selectedConnectionId;
   });
 
   useEffect(() => {
@@ -108,23 +121,20 @@ export default function PixiBoard() {
           const vp = viewportRef.current;
           const connections = connectionsRef.current;
           const items = itemsRef.current;
+          const selectedId = selectedConnIdRef.current;
 
-          // Sync ropes with current connections
           ropeManager.sync(connections, items);
-          // Step physics
           ropeManager.step(connections, items, dt);
 
-          // Apply viewport to stage
           app.stage.position.set(vp.x, vp.y);
           app.stage.scale.set(vp.scale);
 
-          // Render ropes
           gfx.clear();
           const ropes = ropeManager.getRopes();
           for (const conn of connections) {
             const rope = ropes.get(conn.id);
             if (rope) {
-              drawRope(gfx, rope, conn);
+              drawRope(gfx, rope, conn, conn.id === selectedId);
             }
           }
 

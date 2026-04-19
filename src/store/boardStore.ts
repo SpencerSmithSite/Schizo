@@ -44,6 +44,11 @@ interface BoardState {
   // Connections
   addConnection: (fromPinId: string, toPinId: string) => void;
   removeConnection: (id: string) => void;
+  updateConnection: (id: string, patch: Partial<Connection>) => void;
+
+  // Selected connection (for style panel)
+  selectedConnectionId: string | null;
+  setSelectedConnection: (id: string | null) => void;
 
   // Selection
   selectedIds: Set<string>;
@@ -177,7 +182,19 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       connections: s.connections.filter((c) => c.id !== id),
       past: pushPast(s.past, snapshot(s)),
       future: [],
+      selectedConnectionId: s.selectedConnectionId === id ? null : s.selectedConnectionId,
     })),
+
+  // updateConnection snapshots history inline (style / label changes)
+  updateConnection: (id, patch) =>
+    set((s) => ({
+      connections: s.connections.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+    })),
+
+  selectedConnectionId: null,
+  setSelectedConnection: (id) => set({ selectedConnectionId: id }),
 
   selectedIds: new Set(),
 
