@@ -201,6 +201,19 @@ export default function App() {
           ],
         };
         addItem(link);
+        // Async fetch metadata and update the card once resolved
+        getAdapter()
+          .then((adapter) => adapter.fetchLinkPreview(url))
+          .then((preview) => {
+            useBoardStore.getState().updateItem(id, {
+              title: preview.title || url,
+              description: preview.description,
+              faviconUrl: preview.faviconUrl,
+              previewImageUrl: preview.previewImageUrl,
+              fetchedAt: Date.now(),
+            } as Partial<LinkItem>);
+          })
+          .catch(() => {/* silently ignore — card already shows the URL */});
         return;
       }
 

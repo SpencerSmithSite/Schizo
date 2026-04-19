@@ -37,6 +37,7 @@ pub fn run() {
             commands::board::delete_board,
             commands::board::get_setting,
             commands::board::set_setting,
+            commands::link::fetch_link_preview,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

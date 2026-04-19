@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { PlatformAdapter, LoadedBoard } from "./adapter";
+import type { PlatformAdapter, LoadedBoard, LinkPreview } from "./adapter";
 import type { Board, BoardBackground } from "../types/board";
 import type { Item } from "../types/items";
 import type { Connection } from "../types/connections";
@@ -221,5 +221,20 @@ export const tauriAdapter: PlatformAdapter = {
 
   async setSetting(key, value) {
     await invoke("set_setting", { key, value });
+  },
+
+  async fetchLinkPreview(url: string): Promise<LinkPreview> {
+    const raw = await invoke<{
+      title: string | null;
+      description: string | null;
+      favicon_url: string | null;
+      preview_image_url: string | null;
+    }>("fetch_link_preview", { url });
+    return {
+      title: raw.title ?? undefined,
+      description: raw.description ?? undefined,
+      faviconUrl: raw.favicon_url ?? undefined,
+      previewImageUrl: raw.preview_image_url ?? undefined,
+    };
   },
 };

@@ -8,6 +8,13 @@ export interface LoadedBoard {
   connections: Connection[];
 }
 
+export interface LinkPreview {
+  title?: string;
+  description?: string;
+  faviconUrl?: string;
+  previewImageUrl?: string;
+}
+
 export interface PlatformAdapter {
   listBoards(): Promise<Board[]>;
   loadBoard(id: string): Promise<LoadedBoard>;
@@ -15,6 +22,7 @@ export interface PlatformAdapter {
   deleteBoard(id: string): Promise<void>;
   getSetting(key: string): Promise<string | null>;
   setSetting(key: string, value: string): Promise<void>;
+  fetchLinkPreview(url: string): Promise<LinkPreview>;
 }
 
 function isTauriApp(): boolean {

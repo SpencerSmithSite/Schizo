@@ -2,7 +2,7 @@
  * Web / PWA adapter — persists to localStorage.
  * Used when running outside of Tauri (browser dev, PWA).
  */
-import type { PlatformAdapter, LoadedBoard } from "./adapter";
+import type { PlatformAdapter, LoadedBoard, LinkPreview } from "./adapter";
 import type { Board } from "../types/board";
 import type { Item } from "../types/items";
 import type { Connection } from "../types/connections";
@@ -60,5 +60,40 @@ export const webAdapter: PlatformAdapter = {
     const settings = readJson<Record<string, string>>(SETTINGS_KEY, {});
     settings[key] = value;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  },
+
+  async fetchLinkPreview(url: string): Promise<LinkPreview> {
+    try {
+      const parsed = new URL(url);
+      const domain = parsed.hostname;
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+
+      // Best-effort HTML fetch (may fail for CORS-blocked URLs)
+      const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/html");
+
+      const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute("content");
+      const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute("content");
+      const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content");
+      const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content");
+      const pageTitle = doc.querySelector("title")?.textContent?.trim();
+
+      return {
+        title: ogTitle || pageTitle || undefined,
+        description: ogDesc || metaDesc || undefined,
+        faviconUrl,
+        previewImageUrl: ogImage || undefined,
+      };
+    } catch {
+      // Fallback: just return the favicon from Google's service
+      try {
+        const domain = new URL(url).hostname;
+        return { faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=32` };
+      } catch {
+        return {};
+      }
+    }
   },
 };
