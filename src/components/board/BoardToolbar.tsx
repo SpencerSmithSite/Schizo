@@ -1,8 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useBoardStore } from "../../store/boardStore";
 import { useAppStore } from "../../store/appStore";
 import { nanoid } from "../../utils/nanoid";
 import type { NoteItem } from "../../types/items";
+import { exportBoardAsPng } from "../../utils/exportPng";
 
 const TOOLBAR_BUTTON = {
   display: "flex",
@@ -37,6 +38,7 @@ export default function BoardToolbar() {
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
+  const [exporting, setExporting] = useState(false);
 
   const addNote = useCallback(() => {
     if (!board) return;
@@ -91,6 +93,18 @@ export default function BoardToolbar() {
       pins: makeDefaultPins(id),
     });
   }, [addItem, board, viewport]);
+
+  const handleExport = useCallback(async () => {
+    if (exporting || !board) return;
+    setExporting(true);
+    try {
+      await exportBoardAsPng(board.name);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [board, exporting]);
 
   const tools = [
     {
@@ -213,6 +227,21 @@ export default function BoardToolbar() {
           margin: "0 2px",
         }}
       />
+
+      {/* Export as PNG */}
+      <button
+        onClick={handleExport}
+        disabled={exporting}
+        style={{
+          ...TOOLBAR_BUTTON,
+          background: "transparent",
+          color: exporting ? "rgba(255,255,255,0.4)" : "#fff",
+          cursor: exporting ? "not-allowed" : "pointer",
+        }}
+        title="Export board as PNG"
+      >
+        {exporting ? "⏳" : "🖼️"}
+      </button>
 
       {/* Settings */}
       <button

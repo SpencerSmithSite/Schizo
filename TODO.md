@@ -33,15 +33,15 @@
 - [ ] Interactive testing via `npm run tauri dev`
 
 ### V1
-- [ ] Per-connection string style picker (color, texture, slack)
+- [x] Per-connection string style picker (click rope to open style panel)
 - [x] Item labels (caption)
 - [x] Item resize handles
 - [x] Multi-select (shift-click, rubber-band drag)
 - [x] Undo / redo (50 steps)
 - [x] Context menu (right-click: delete item, duplicate, edit label)
-- [ ] Export board as PNG
+- [x] Export board as PNG (toolbar 🖼️ button, html2canvas)
+- [x] Link item OG preview fetch (title, description, favicon, thumbnail)
 - [ ] PWA support (manifest + service worker)
-- [ ] Link item OG preview fetch (title, description, thumbnail via Rust HTTP)
 
 ### V1.5
 - [ ] YouTube / Vimeo video embed items

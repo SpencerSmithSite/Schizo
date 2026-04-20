@@ -101,6 +101,7 @@ export default function PixiBoard() {
         antialias: true,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
+        preserveDrawingBuffer: true,
       })
       .then(() => {
         container.appendChild(app.canvas);

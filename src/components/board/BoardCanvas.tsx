@@ -251,6 +251,7 @@ export default function BoardCanvas() {
 
   return (
     <div
+      id="board-canvas-root"
       ref={canvasRef}
       style={{
         position: "relative",
