@@ -41,7 +41,7 @@
 - [x] Context menu (right-click: delete item, duplicate, edit label)
 - [x] Export board as PNG (toolbar 🖼️ button, html2canvas)
 - [x] Link item OG preview fetch (title, description, favicon, thumbnail)
-- [ ] PWA support (manifest + service worker)
+- [x] PWA support (manifest + service worker + icon)
 
 ### V1.5
 - [ ] YouTube / Vimeo video embed items

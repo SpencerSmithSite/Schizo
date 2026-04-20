@@ -1,0 +1,19 @@
+{
+  "name": "Schizo",
+  "short_name": "Schizo",
+  "description": "A privacy-first corkboard note-taking app. Pin notes, images, and links to an infinite canvas and connect them with string.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#c8a96e",
+  "theme_color": "#1e140a",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
