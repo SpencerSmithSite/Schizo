@@ -7,6 +7,7 @@ import BoardSwitcher from "./components/ui/BoardSwitcher";
 import ConnectionStylePanel from "./components/board/ConnectionStylePanel";
 import OllamaChat from "./components/ui/OllamaChat";
 import OllamaSettings from "./components/ui/OllamaSettings";
+import SearchPanel from "./components/ui/SearchPanel";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
 import type { Board } from "./types/board";
@@ -37,6 +38,8 @@ export default function App() {
   const setActiveBoardId = useAppStore((s) => s.setActiveBoardId);
   const settingsOpen = useAppStore((s) => s.settingsOpen);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
+  const searchOpen = useAppStore((s) => s.searchOpen);
+  const setSearchOpen = useAppStore((s) => s.setSearchOpen);
 
   const [chatOpen, setChatOpen] = useState(false);
   const [renamingBoard, setRenamingBoard] = useState(false);
@@ -129,6 +132,13 @@ export default function App() {
         if (inInput) return;
         e.preventDefault();
         redo();
+        return;
+      }
+
+      // Cmd+K / Ctrl+K — open search
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
         return;
       }
 
@@ -283,7 +293,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addItem, removeItem, clearSelection, setMode, undo, redo, removeConnection, setSelectedConnection]);
+  }, [addItem, removeItem, clearSelection, setMode, undo, redo, removeConnection, setSelectedConnection, setSearchOpen]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -418,6 +428,7 @@ export default function App() {
 
       {chatOpen && <OllamaChat onClose={() => setChatOpen(false)} />}
       {settingsOpen && <OllamaSettings onClose={() => setSettingsOpen(false)} />}
+      {searchOpen && <SearchPanel />}
     </div>
   );
 }

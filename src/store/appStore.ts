@@ -20,6 +20,9 @@ interface AppState {
 
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
+
+  searchOpen: boolean;
+  setSearchOpen: (open: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -45,4 +48,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   settingsOpen: false,
   setSettingsOpen: (open) => set({ settingsOpen: open }),
+
+  searchOpen: false,
+  setSearchOpen: (open) => set({ searchOpen: open }),
 }));

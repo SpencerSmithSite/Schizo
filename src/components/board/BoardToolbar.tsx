@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useBoardStore } from "../../store/boardStore";
 import { useAppStore } from "../../store/appStore";
+
 import { nanoid } from "../../utils/nanoid";
 import type { NoteItem, VideoItem } from "../../types/items";
 import { exportBoardAsPng } from "../../utils/exportPng";
@@ -36,6 +37,7 @@ export default function BoardToolbar() {
   const board = useBoardStore((s) => s.board);
   const viewport = useBoardStore((s) => s.viewport);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
+  const setSearchOpen = useAppStore((s) => s.setSearchOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const [exporting, setExporting] = useState(false);
@@ -274,6 +276,15 @@ export default function BoardToolbar() {
         title="Export board as PNG"
       >
         {exporting ? "⏳" : "🖼️"}
+      </button>
+
+      {/* Search */}
+      <button
+        onClick={() => setSearchOpen(true)}
+        style={{ ...TOOLBAR_BUTTON, background: "transparent", color: "#fff" }}
+        title="Search all boards (⌘K)"
+      >
+        🔍
       </button>
 
       {/* Settings */}
