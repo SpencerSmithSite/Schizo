@@ -85,15 +85,22 @@ export class RopeManager {
     }
   }
 
-  wakeConnectedToItem(_itemId: string, connections: Connection[]): void {
+  wakeConnectedToItem(itemId: string, connections: Connection[], items: Item[]): void {
+    const item = items.find((it) => it.id === itemId);
+    if (!item) return;
+    const pinIds = new Set(item.pins.map((p) => p.id));
     for (const conn of connections) {
+      if (!pinIds.has(conn.fromPinId) && !pinIds.has(conn.toPinId)) continue;
       const rope = this.ropes.get(conn.id);
-      if (!rope) continue;
-      // We need to check if any pin belongs to this item
-      // The store has this info, but here we just wake all (cheap)
-      // A more precise impl would track which connections use which item's pins
-      wakeRope(rope);
+      if (rope) wakeRope(rope);
     }
+  }
+
+  hasAwakeRopes(): boolean {
+    for (const rope of this.ropes.values()) {
+      if (rope.awake) return true;
+    }
+    return false;
   }
 
   getRopes(): Map<string, Rope> {

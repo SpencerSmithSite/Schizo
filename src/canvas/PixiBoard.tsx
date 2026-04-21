@@ -72,6 +72,8 @@ export default function PixiBoard() {
   const gfxRef = useRef<PIXI.Graphics | null>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(performance.now());
+  const prevVpRef = useRef({ x: 0, y: 0, scale: 1 });
+  const prevSelectedRef = useRef<string | null>(null);
 
   const viewport = useBoardStore((s) => s.viewport);
   const viewportRef = useRef(viewport);
@@ -126,6 +128,20 @@ export default function PixiBoard() {
 
           ropeManager.sync(connections, items);
           ropeManager.step(connections, items, dt);
+
+          const vpChanged =
+            vp.x !== prevVpRef.current.x ||
+            vp.y !== prevVpRef.current.y ||
+            vp.scale !== prevVpRef.current.scale;
+          const selChanged = selectedId !== prevSelectedRef.current;
+
+          if (!ropeManager.hasAwakeRopes() && !vpChanged && !selChanged) {
+            rafRef.current = requestAnimationFrame(tick);
+            return;
+          }
+
+          prevVpRef.current = { x: vp.x, y: vp.y, scale: vp.scale };
+          prevSelectedRef.current = selectedId;
 
           app.stage.position.set(vp.x, vp.y);
           app.stage.scale.set(vp.scale);
