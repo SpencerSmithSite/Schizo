@@ -10,7 +10,7 @@ import OllamaSettings from "./components/ui/OllamaSettings";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
 import type { Board } from "./types/board";
-import type { NoteItem, LinkItem } from "./types/items";
+import type { NoteItem, LinkItem, VideoItem } from "./types/items";
 
 const AUTO_SAVE_DELAY_MS = 1500;
 
@@ -214,6 +214,41 @@ export default function App() {
             } as Partial<LinkItem>);
           })
           .catch(() => {/* silently ignore — card already shows the URL */});
+        return;
+      }
+
+      // V — add video
+      if (e.key === "v" || e.key === "V") {
+        e.preventDefault();
+        const { board, viewport } = useBoardStore.getState();
+        if (!board) return;
+        const url = window.prompt("Enter YouTube or Vimeo URL:");
+        if (!url) return;
+        const id = nanoid();
+        const cx = (window.innerWidth / 2 - viewport.x) / viewport.scale - 160;
+        const cy = (window.innerHeight / 2 - viewport.y) / viewport.scale - 90;
+        const video: VideoItem = {
+          id,
+          boardId: board.id,
+          type: "video",
+          x: cx + (Math.random() - 0.5) * 60,
+          y: cy + (Math.random() - 0.5) * 60,
+          width: 320,
+          height: 180,
+          rotation: (Math.random() - 0.5) * 3,
+          zIndex: Date.now(),
+          createdAt: Date.now(),
+          url,
+          startTime: 0,
+          pins: [
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0, offsetY: -0.5 },
+            { id: nanoid(), itemId: id, offsetX: -0.5, offsetY: 0.5 },
+            { id: nanoid(), itemId: id, offsetX: 0.5, offsetY: 0.5 },
+          ],
+        };
+        addItem(video);
         return;
       }
 

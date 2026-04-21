@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useBoardStore } from "../../store/boardStore";
 import { useAppStore } from "../../store/appStore";
 import { nanoid } from "../../utils/nanoid";
-import type { NoteItem } from "../../types/items";
+import type { NoteItem, VideoItem } from "../../types/items";
 import { exportBoardAsPng } from "../../utils/exportPng";
 
 const TOOLBAR_BUTTON = {
@@ -65,6 +65,31 @@ export default function BoardToolbar() {
       pins: makeDefaultPins(id),
     };
     addItem(note);
+  }, [addItem, board, viewport]);
+
+  const addVideo = useCallback(() => {
+    if (!board) return;
+    const url = window.prompt("Enter YouTube or Vimeo URL:");
+    if (!url) return;
+    const id = nanoid();
+    const centerX = (window.innerWidth / 2 - viewport.x) / viewport.scale - 160;
+    const centerY = (window.innerHeight / 2 - viewport.y) / viewport.scale - 90;
+    const video: VideoItem = {
+      id,
+      boardId: board.id,
+      type: "video",
+      x: centerX + (Math.random() - 0.5) * 60,
+      y: centerY + (Math.random() - 0.5) * 60,
+      width: 320,
+      height: 180,
+      rotation: (Math.random() - 0.5) * 3,
+      zIndex: Date.now(),
+      createdAt: Date.now(),
+      url,
+      startTime: 0,
+      pins: makeDefaultPins(id),
+    };
+    addItem(video);
   }, [addItem, board, viewport]);
 
   const addLink = useCallback(async () => {
@@ -217,6 +242,14 @@ export default function BoardToolbar() {
         title="Add link (L)"
       >
         🔗
+      </button>
+
+      <button
+        onClick={addVideo}
+        style={{ ...TOOLBAR_BUTTON, background: "transparent", color: "#fff" }}
+        title="Add video (V) — YouTube or Vimeo"
+      >
+        🎬
       </button>
 
       <div

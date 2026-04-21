@@ -4,7 +4,8 @@ import PixiBoard, { ropeManager } from "../../canvas/PixiBoard";
 import NoteItem from "../items/NoteItem";
 import ImageItem from "../items/ImageItem";
 import LinkItem from "../items/LinkItem";
-import type { ImageItem as ImageItemType, Item } from "../../types/items";
+import VideoItem from "../items/VideoItem";
+import type { ImageItem as ImageItemType, VideoItem as VideoItemType, Item } from "../../types/items";
 import { nanoid } from "../../utils/nanoid";
 
 function renderItem(item: Item) {
@@ -16,6 +17,8 @@ function renderItem(item: Item) {
       return <ImageItem key={item.id} item={item as import("../../types/items").ImageItem} />;
     case "link":
       return <LinkItem key={item.id} item={item} />;
+    case "video":
+      return <VideoItem key={item.id} item={item as VideoItemType} />;
     default:
       return null;
   }

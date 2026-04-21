@@ -44,7 +44,7 @@
 - [x] PWA support (manifest + service worker + icon)
 
 ### V1.5
-- [ ] YouTube / Vimeo video embed items
+- [x] YouTube / Vimeo video embed items
 - [ ] Full-text search across all boards
 - [x] Keyboard shortcuts (N=note, L=link, C=connect mode, Cmd+Z=undo)
 - [x] Rope "sleep" optimization (skip inactive ropes)
