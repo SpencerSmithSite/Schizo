@@ -10,6 +10,7 @@ import OllamaSettings from "./components/ui/OllamaSettings";
 import SearchPanel from "./components/ui/SearchPanel";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
+import { buildOnboardingBoard } from "./utils/onboarding";
 import type { Board } from "./types/board";
 import type { NoteItem, LinkItem, VideoItem } from "./types/items";
 
@@ -79,16 +80,10 @@ export default function App() {
       let savedBoards = await adapter.listBoards();
 
       if (savedBoards.length === 0) {
-        // First run — create and persist a default board
-        const defaultBoard: Board = {
-          id: nanoid(),
-          name: "My Board",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          backgroundStyle: "cork",
-          viewport: { x: 0, y: 0, scale: 1 },
-        };
-        await adapter.saveBoard(defaultBoard, [], []);
+        // First run — seed the app with a pre-populated welcome board
+        const { board: defaultBoard, items: defaultItems, connections: defaultConnections } =
+          buildOnboardingBoard();
+        await adapter.saveBoard(defaultBoard, defaultItems, defaultConnections);
         savedBoards = [defaultBoard];
         addBoard(defaultBoard);
       } else {

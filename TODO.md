@@ -53,7 +53,7 @@
 - [ ] Nested boards (double-click item → sub-board)
 - [ ] Mobile target (Tauri 2 iOS/Android)
 - [ ] Board templates (Cold Case, Research, Mood Board…)
-- [ ] Onboarding example board
+- [x] Onboarding example board
 
 ### V3
 - [ ] Local-network collaboration (mDNS peer discovery + CRDTs)
