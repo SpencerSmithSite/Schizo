@@ -1,9 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useAppStore } from "../../store/appStore";
 import { useBoardStore } from "../../store/boardStore";
 import { getAdapter } from "../../utils/adapter";
 import { nanoid } from "../../utils/nanoid";
+import { buildTemplate } from "../../utils/templates";
+import type { TemplateId } from "../../utils/templates";
 import type { Board } from "../../types/board";
+import NewBoardDialog from "./NewBoardDialog";
 
 export default function BoardSwitcher() {
   const boards = useAppStore((s) => s.boards);
@@ -19,16 +22,19 @@ export default function BoardSwitcher() {
   const connections = useBoardStore((s) => s.connections);
   const viewport = useBoardStore((s) => s.viewport);
 
-  const createBoard = useCallback(async () => {
-    const name = window.prompt("Board name:", "New Board");
-    if (!name) return;
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleCreateConfirm = useCallback(async (name: string, templateId: TemplateId) => {
+    setDialogOpen(false);
+    const boardId = nanoid();
+    const { items: tplItems, connections: tplConns, viewport: tplViewport } = buildTemplate(templateId, boardId);
     const newBoard: Board = {
-      id: nanoid(),
+      id: boardId,
       name,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       backgroundStyle: "cork",
-      viewport: { x: 0, y: 0, scale: 1 },
+      viewport: tplViewport,
     };
     const adapter = await getAdapter();
     // Save current board before switching away
@@ -37,10 +43,10 @@ export default function BoardSwitcher() {
         .saveBoard({ ...board, viewport, updatedAt: Date.now() }, items, connections)
         .catch(console.error);
     }
-    await adapter.saveBoard(newBoard, [], []).catch(console.error);
+    await adapter.saveBoard(newBoard, tplItems, tplConns).catch(console.error);
     addBoard(newBoard);
     setActiveBoardId(newBoard.id);
-    initBoard(newBoard, [], []);
+    initBoard(newBoard, tplItems, tplConns);
   }, [addBoard, board, connections, initBoard, items, setActiveBoardId, viewport]);
 
   const switchBoard = useCallback(
@@ -129,7 +135,7 @@ export default function BoardSwitcher() {
             Boards
           </span>
           <button
-            onClick={createBoard}
+            onClick={() => setDialogOpen(true)}
             title="Create a new board"
             style={{
               background: "rgba(255,255,255,0.1)",
@@ -215,6 +221,12 @@ export default function BoardSwitcher() {
           ))}
         </div>
       </div>
+      {dialogOpen && (
+        <NewBoardDialog
+          onConfirm={handleCreateConfirm}
+          onCancel={() => setDialogOpen(false)}
+        />
+      )}
     </>
   );
 }

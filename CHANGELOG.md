@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Board templates: "New Board" now opens a dialog with a name field and four template choices (Empty, Cold Case, Research, Mood Board); each template pre-populates the board with labelled notes and connected strings.
 - Onboarding example board: first-run now seeds a pre-populated "Welcome Board" with five annotated sticky notes and string connections, demonstrating notes, shortcuts, multi-board navigation, and the privacy model.
 
 ## [1.5.0] — 2026-04

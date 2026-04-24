@@ -52,7 +52,7 @@
 ### V2
 - [ ] Nested boards (double-click item → sub-board)
 - [ ] Mobile target (Tauri 2 iOS/Android)
-- [ ] Board templates (Cold Case, Research, Mood Board…)
+- [x] Board templates (Cold Case, Research, Mood Board…)
 - [x] Onboarding example board
 
 ### V3
