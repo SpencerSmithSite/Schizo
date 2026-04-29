@@ -50,7 +50,7 @@
 - [x] Rope "sleep" optimization (skip inactive ropes)
 
 ### V2
-- [ ] Nested boards (double-click item → sub-board)
+- [x] Nested boards (board-portal items — double-click to open sub-board, breadcrumb to navigate back)
 - [ ] Mobile target (Tauri 2 iOS/Android)
 - [x] Board templates (Cold Case, Research, Mood Board…)
 - [x] Onboarding example board

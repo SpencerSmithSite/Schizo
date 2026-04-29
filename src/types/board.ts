@@ -13,4 +13,5 @@ export interface Board {
   updatedAt: number;
   backgroundStyle: BoardBackground;
   viewport: Viewport;
+  parentBoardId?: string;
 }

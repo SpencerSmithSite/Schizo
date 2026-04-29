@@ -5,7 +5,8 @@ import NoteItem from "../items/NoteItem";
 import ImageItem from "../items/ImageItem";
 import LinkItem from "../items/LinkItem";
 import VideoItem from "../items/VideoItem";
-import type { ImageItem as ImageItemType, VideoItem as VideoItemType, Item } from "../../types/items";
+import BoardPortalItem from "../items/BoardPortalItem";
+import type { ImageItem as ImageItemType, VideoItem as VideoItemType, BoardPortalItem as BoardPortalItemType, Item } from "../../types/items";
 import { nanoid } from "../../utils/nanoid";
 
 function renderItem(item: Item) {
@@ -14,11 +15,13 @@ function renderItem(item: Item) {
       return <NoteItem key={item.id} item={item} />;
     case "image":
     case "screenshot":
-      return <ImageItem key={item.id} item={item as import("../../types/items").ImageItem} />;
+      return <ImageItem key={item.id} item={item as ImageItemType} />;
     case "link":
       return <LinkItem key={item.id} item={item} />;
     case "video":
       return <VideoItem key={item.id} item={item as VideoItemType} />;
+    case "board-portal":
+      return <BoardPortalItem key={item.id} item={item as BoardPortalItemType} />;
     default:
       return null;
   }

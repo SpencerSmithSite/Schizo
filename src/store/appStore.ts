@@ -12,6 +12,11 @@ interface AppState {
   updateBoard: (id: string, patch: Partial<Board>) => void;
   setActiveBoardId: (id: string | null) => void;
 
+  boardNavStack: string[];
+  pushBoardNav: (boardId: string) => void;
+  popBoardNav: () => void;
+  clearBoardNav: () => void;
+
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 
@@ -38,6 +43,13 @@ export const useAppStore = create<AppState>((set) => ({
       boards: s.boards.map((b) => (b.id === id ? { ...b, ...patch } : b)),
     })),
   setActiveBoardId: (id) => set({ activeBoardId: id }),
+
+  boardNavStack: [],
+  pushBoardNav: (boardId) =>
+    set((s) => ({ boardNavStack: [...s.boardNavStack, boardId] })),
+  popBoardNav: () =>
+    set((s) => ({ boardNavStack: s.boardNavStack.slice(0, -1) })),
+  clearBoardNav: () => set({ boardNavStack: [] }),
 
   sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),

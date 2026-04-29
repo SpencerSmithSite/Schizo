@@ -11,6 +11,7 @@ import SearchPanel from "./components/ui/SearchPanel";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
 import { buildOnboardingBoard } from "./utils/onboarding";
+import { navigateBack, createSubBoardPortal } from "./utils/boardNavigation";
 import type { Board } from "./types/board";
 import type { NoteItem, LinkItem, VideoItem } from "./types/items";
 
@@ -41,6 +42,11 @@ export default function App() {
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const searchOpen = useAppStore((s) => s.searchOpen);
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+  const boardNavStack = useAppStore((s) => s.boardNavStack);
+  const allBoards = useAppStore((s) => s.boards);
+  const parentBoardName = boardNavStack.length > 0
+    ? (allBoards.find((b) => b.id === boardNavStack[boardNavStack.length - 1])?.name ?? "Back")
+    : null;
 
   const [chatOpen, setChatOpen] = useState(false);
   const [renamingBoard, setRenamingBoard] = useState(false);
@@ -257,6 +263,23 @@ export default function App() {
         return;
       }
 
+      // B — create sub-board portal
+      if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        const { board, viewport } = useBoardStore.getState();
+        if (!board) return;
+        const name = window.prompt("Sub-board name:");
+        if (!name?.trim()) return;
+        const cx = (window.innerWidth / 2 - viewport.x) / viewport.scale - 80;
+        const cy = (window.innerHeight / 2 - viewport.y) / viewport.scale - 65;
+        createSubBoardPortal(
+          name.trim(),
+          cx + (Math.random() - 0.5) * 60,
+          cy + (Math.random() - 0.5) * 60,
+        ).catch(console.error);
+        return;
+      }
+
       // C — connect mode toggle
       if (e.key === "c" || e.key === "C") {
         e.preventDefault();
@@ -340,6 +363,34 @@ export default function App() {
         position: "relative",
       }}
     >
+      {/* Back breadcrumb — shown when navigated into a sub-board */}
+      {parentBoardName && (
+        <button
+          onClick={() => navigateBack().catch(console.error)}
+          title={`Back to "${parentBoardName}"`}
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            zIndex: 100,
+            background: "rgba(30,20,10,0.75)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255,140,40,0.25)",
+            borderRadius: 8,
+            color: "rgba(255,200,140,0.85)",
+            padding: "5px 12px",
+            cursor: "pointer",
+            fontSize: 13,
+            fontFamily: "system-ui, sans-serif",
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+          }}
+        >
+          ← {parentBoardName}
+        </button>
+      )}
+
       {/* Board name header — double-click to rename */}
       <div
         onDoubleClick={startRename}

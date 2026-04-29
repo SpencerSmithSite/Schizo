@@ -41,6 +41,11 @@ export function buildBoardContext(board: Board, items: Item[]): string {
           `[Video] ${item.label ?? "video"}${item.url ? ` (${item.url})` : ""}`,
         );
         break;
+      case "board-portal":
+        lines.push(
+          `[Sub-board] ${item.label ?? "sub-board portal"} → board ID ${item.targetBoardId}`,
+        );
+        break;
     }
   }
 

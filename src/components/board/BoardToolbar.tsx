@@ -5,6 +5,7 @@ import { useAppStore } from "../../store/appStore";
 import { nanoid } from "../../utils/nanoid";
 import type { NoteItem, VideoItem } from "../../types/items";
 import { exportBoardAsPng } from "../../utils/exportPng";
+import { createSubBoardPortal } from "../../utils/boardNavigation";
 
 const TOOLBAR_BUTTON = {
   display: "flex",
@@ -120,6 +121,19 @@ export default function BoardToolbar() {
       pins: makeDefaultPins(id),
     });
   }, [addItem, board, viewport]);
+
+  const addSubBoard = useCallback(async () => {
+    if (!board) return;
+    const name = window.prompt("Sub-board name:");
+    if (!name?.trim()) return;
+    const cx = (window.innerWidth / 2 - viewport.x) / viewport.scale - 80;
+    const cy = (window.innerHeight / 2 - viewport.y) / viewport.scale - 65;
+    await createSubBoardPortal(
+      name.trim(),
+      cx + (Math.random() - 0.5) * 60,
+      cy + (Math.random() - 0.5) * 60,
+    );
+  }, [board, viewport]);
 
   const handleExport = useCallback(async () => {
     if (exporting || !board) return;
@@ -252,6 +266,14 @@ export default function BoardToolbar() {
         title="Add video (V) — YouTube or Vimeo"
       >
         🎬
+      </button>
+
+      <button
+        onClick={addSubBoard}
+        style={{ ...TOOLBAR_BUTTON, background: "transparent", color: "#fff" }}
+        title="Create sub-board portal (B)"
+      >
+        🗂️
       </button>
 
       <div

@@ -62,11 +62,17 @@ export interface VideoItem extends BaseItem {
   thumbnailUrl?: string;
 }
 
+export interface BoardPortalItem extends BaseItem {
+  type: "board-portal";
+  targetBoardId: string;
+}
+
 export type Item =
   | NoteItem
   | ImageItem
   | ScreenshotItem
   | LinkItem
-  | VideoItem;
+  | VideoItem
+  | BoardPortalItem;
 
 export type ItemType = Item["type"];

@@ -36,6 +36,8 @@ function getItemText(item: Item): string {
       if (item.url) parts.push(item.url);
       if (item.src) parts.push(item.src);
       break;
+    case "board-portal":
+      break;
   }
   return parts.join(" ");
 }
