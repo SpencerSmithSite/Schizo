@@ -41,6 +41,7 @@ export default function BoardToolbar() {
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
+  const fitToContent = useBoardStore((s) => s.fitToContent);
   const [exporting, setExporting] = useState(false);
 
   const addNote = useCallback(() => {
@@ -284,6 +285,15 @@ export default function BoardToolbar() {
           margin: "0 2px",
         }}
       />
+
+      {/* Fit to view */}
+      <button
+        onClick={() => fitToContent(window.innerWidth, window.innerHeight)}
+        style={{ ...TOOLBAR_BUTTON, background: "transparent", color: "#fff" }}
+        title="Fit all items in view (F)"
+      >
+        ⊡
+      </button>
 
       {/* Export as PNG */}
       <button

@@ -30,6 +30,7 @@ interface BoardState {
   setViewport: (v: Viewport) => void;
   panBy: (dx: number, dy: number) => void;
   zoomTo: (scale: number, cx: number, cy: number) => void;
+  fitToContent: (screenW: number, screenH: number) => void;
 
   // Board lifecycle
   initBoard: (board: Board, items: Item[], connections: Connection[]) => void;
@@ -57,7 +58,13 @@ interface BoardState {
     rect: { x: number; y: number; w: number; h: number },
     additive?: boolean,
   ) => void;
+  selectAll: () => void;
   clearSelection: () => void;
+
+  // Clipboard (in-memory copy/paste)
+  clipboard: Item[];
+  copyToClipboard: (ids: Set<string>) => void;
+  pasteFromClipboard: () => void;
 
   // Interaction mode
   mode: "select" | "connect" | "pan";
@@ -99,6 +106,33 @@ export const useBoardStore = create<BoardState>((set, get) => ({
           x: cx - (cx - s.viewport.x) * ratio,
           y: cy - (cy - s.viewport.y) * ratio,
           scale: clamped,
+        },
+      };
+    }),
+
+  fitToContent: (screenW, screenH) =>
+    set((s) => {
+      if (s.items.length === 0) return s;
+      const PAD = 64;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const it of s.items) {
+        minX = Math.min(minX, it.x);
+        minY = Math.min(minY, it.y);
+        maxX = Math.max(maxX, it.x + it.width);
+        maxY = Math.max(maxY, it.y + it.height);
+      }
+      const bboxW = maxX - minX;
+      const bboxH = maxY - minY;
+      const scale = Math.min(
+        Math.max((screenW - PAD * 2) / bboxW, 0.1),
+        Math.max((screenH - PAD * 2) / bboxH, 0.1),
+        4,
+      );
+      return {
+        viewport: {
+          scale,
+          x: screenW / 2 - (minX + bboxW / 2) * scale,
+          y: screenH / 2 - (minY + bboxH / 2) * scale,
         },
       };
     }),
@@ -229,7 +263,40 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { selectedIds: matched };
     }),
 
+  selectAll: () => set((s) => ({ selectedIds: new Set(s.items.map((it) => it.id)) })),
+
   clearSelection: () => set({ selectedIds: new Set() }),
+
+  clipboard: [],
+
+  copyToClipboard: (ids) =>
+    set((s) => ({ clipboard: s.items.filter((it) => ids.has(it.id)) })),
+
+  pasteFromClipboard: () => {
+    const { clipboard, board, items } = get();
+    if (clipboard.length === 0 || !board) return;
+    const OFFSET = 32;
+    const maxZ = Math.max(...items.map((it) => it.zIndex), 0);
+    const newItems = clipboard.map((it, i) => {
+      const newId = nanoid();
+      return {
+        ...it,
+        id: newId,
+        boardId: board.id,
+        x: it.x + OFFSET,
+        y: it.y + OFFSET,
+        zIndex: maxZ + 1 + i,
+        createdAt: Date.now(),
+        pins: it.pins.map((p) => ({ ...p, id: nanoid(), itemId: newId })),
+      } as Item;
+    });
+    set((s) => ({
+      items: [...s.items, ...newItems],
+      past: pushPast(s.past, snapshot(s)),
+      future: [],
+      selectedIds: new Set(newItems.map((it) => it.id)),
+    }));
+  },
 
   mode: "select",
   setMode: (mode) => set({ mode }),

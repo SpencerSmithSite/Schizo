@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- Fit-to-view: press `F` or click the ⊡ toolbar button to zoom and pan so all items on the current board are visible at once.
+- Select all: `⌘A` / `Ctrl+A` selects every item on the board.
+- Copy / paste: `⌘C` / `Ctrl+C` copies selected items; `⌘V` / `Ctrl+V` pastes them offset by 32 px with fresh IDs.
 - Item locking: right-click any item and choose "Lock" to prevent it from being dragged or resized. A 🔒 badge appears on locked items. Unlock the same way. Locked items can still be selected, connected, labelled, and deleted.
 - Nested boards: create sub-board portal items (`B` shortcut or 🗂️ toolbar button) that link to a child board. Double-click a portal card to navigate into the sub-board. A breadcrumb button in the top-left lets you navigate back to the parent board.
 - Board templates: "New Board" now opens a dialog with a name field and four template choices (Empty, Cold Case, Research, Mood Board); each template pre-populates the board with labelled notes and connected strings.

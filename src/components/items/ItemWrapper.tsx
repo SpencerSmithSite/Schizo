@@ -125,6 +125,7 @@ export default function ItemWrapper({ item, children }: Props) {
   const bringToFront = useBoardStore((s) => s.bringToFront);
   const clearSelection = useBoardStore((s) => s.clearSelection);
   const pushHistory = useBoardStore((s) => s.pushHistory);
+  const copyToClipboard = useBoardStore((s) => s.copyToClipboard);
   const mode = useBoardStore((s) => s.mode);
 
   const isSelected = selectedIds.has(item.id);
@@ -356,6 +357,17 @@ export default function ItemWrapper({ item, children }: Props) {
               onClick: () => {
                 setLabelValue(item.label ?? "");
                 setLabelEditing(true);
+              },
+            },
+            {
+              icon: "⎘",
+              label:
+                selectedIds.has(item.id) && selectedIds.size > 1
+                  ? `Copy ${selectedIds.size} items`
+                  : "Copy",
+              onClick: () => {
+                const ids = selectedIds.has(item.id) ? selectedIds : new Set([item.id]);
+                copyToClipboard(ids);
               },
             },
             {

@@ -31,6 +31,10 @@ export default function App() {
   const setMode = useBoardStore((s) => s.setMode);
   const undo = useBoardStore((s) => s.undo);
   const redo = useBoardStore((s) => s.redo);
+  const selectAll = useBoardStore((s) => s.selectAll);
+  const copyToClipboard = useBoardStore((s) => s.copyToClipboard);
+  const pasteFromClipboard = useBoardStore((s) => s.pasteFromClipboard);
+  const fitToContent = useBoardStore((s) => s.fitToContent);
   const removeConnection = useBoardStore((s) => s.removeConnection);
   const setSelectedConnection = useBoardStore((s) => s.setSelectedConnection);
   const updateAppBoard = useAppStore((s) => s.updateBoard);
@@ -140,6 +144,30 @@ export default function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen(true);
+        return;
+      }
+
+      // Cmd+A / Ctrl+A — select all items
+      if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+        if (inInput) return;
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
+      // Cmd+C / Ctrl+C — copy selected items
+      if ((e.metaKey || e.ctrlKey) && e.key === "c") {
+        if (inInput) return;
+        e.preventDefault();
+        copyToClipboard(selectedIdsRef.current);
+        return;
+      }
+
+      // Cmd+V / Ctrl+V — paste clipboard
+      if ((e.metaKey || e.ctrlKey) && e.key === "v") {
+        if (inInput) return;
+        e.preventDefault();
+        pasteFromClipboard();
         return;
       }
 
@@ -280,6 +308,13 @@ export default function App() {
         return;
       }
 
+      // F — fit all items in view
+      if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        fitToContent(window.innerWidth, window.innerHeight);
+        return;
+      }
+
       // C — connect mode toggle
       if (e.key === "c" || e.key === "C") {
         e.preventDefault();
@@ -311,7 +346,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addItem, removeItem, clearSelection, setMode, undo, redo, removeConnection, setSelectedConnection, setSearchOpen]);
+  }, [addItem, removeItem, clearSelection, setMode, undo, redo, selectAll, copyToClipboard, pasteFromClipboard, removeConnection, setSelectedConnection, setSearchOpen, fitToContent]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
