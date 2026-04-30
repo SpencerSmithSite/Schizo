@@ -20,6 +20,8 @@ export interface BaseItem {
   createdAt: number;
   label?: string;
   pins: Pin[];
+  /** When true, the item cannot be dragged or resized */
+  locked?: boolean;
 }
 
 export interface NoteItem extends BaseItem {

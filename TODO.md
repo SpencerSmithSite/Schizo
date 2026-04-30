@@ -51,6 +51,7 @@
 
 ### V2
 - [x] Nested boards (board-portal items — double-click to open sub-board, breadcrumb to navigate back)
+- [x] Item locking (right-click → Lock/Unlock; locked items can't be dragged or resized)
 - [ ] Mobile target (Tauri 2 iOS/Android)
 - [x] Board templates (Cold Case, Research, Mood Board…)
 - [x] Onboarding example board

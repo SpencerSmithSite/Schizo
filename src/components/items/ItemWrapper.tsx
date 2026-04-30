@@ -147,10 +147,11 @@ export default function ItemWrapper({ item, children }: Props) {
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (mode === "connect") return;
       e.stopPropagation();
+      selectItem(item.id, e.shiftKey);
+      if (item.locked) return; // allow selection but block drag
       e.currentTarget.setPointerCapture(e.pointerId);
       pushHistory(); // snapshot before drag gesture
       bringToFront(item.id);
-      selectItem(item.id, e.shiftKey);
       dragStart.current = {
         pointerId: e.pointerId,
         startX: e.clientX,
@@ -160,7 +161,7 @@ export default function ItemWrapper({ item, children }: Props) {
       };
       isDragging.current = false;
     },
-    [mode, bringToFront, item.id, item.x, item.y, selectItem, pushHistory],
+    [mode, bringToFront, item.id, item.x, item.y, item.locked, selectItem, pushHistory],
   );
 
   const handlePointerMove = useCallback(
@@ -248,7 +249,7 @@ export default function ItemWrapper({ item, children }: Props) {
         height: item.height,
         transform: `rotate(${item.rotation}deg)`,
         zIndex: item.zIndex,
-        cursor: mode === "connect" ? "crosshair" : "grab",
+        cursor: mode === "connect" ? "crosshair" : item.locked ? "default" : "grab",
         userSelect: "none",
         outline: isSelected ? "2px solid rgba(59, 130, 246, 0.8)" : "none",
         outlineOffset: "3px",
@@ -257,8 +258,31 @@ export default function ItemWrapper({ item, children }: Props) {
     >
       {children}
 
-      {/* Corner resize handles — only when selected and in select mode */}
-      {isSelected && mode === "select" && (
+      {/* Lock indicator */}
+      {item.locked && (
+        <div
+          style={{
+            position: "absolute",
+            top: -8,
+            right: -8,
+            width: 16,
+            height: 16,
+            background: "rgba(18,12,4,0.78)",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 9,
+            zIndex: 9,
+            pointerEvents: "none",
+          }}
+        >
+          🔒
+        </div>
+      )}
+
+      {/* Corner resize handles — only when selected, unlocked, and in select mode */}
+      {isSelected && mode === "select" && !item.locked && (
         <>
           <ResizeHandle position="nw" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
           <ResizeHandle position="ne" item={item} viewport={viewport} updateItem={updateItem} pushHistory={pushHistory} />
@@ -321,6 +345,11 @@ export default function ItemWrapper({ item, children }: Props) {
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           actions={[
+            {
+              icon: item.locked ? "🔓" : "🔒",
+              label: item.locked ? "Unlock" : "Lock",
+              onClick: () => updateItem(item.id, { locked: !item.locked }),
+            },
             {
               icon: "✏️",
               label: "Edit Label",
