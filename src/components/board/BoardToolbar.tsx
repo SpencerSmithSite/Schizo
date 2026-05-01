@@ -39,6 +39,7 @@ export default function BoardToolbar() {
   const viewport = useBoardStore((s) => s.viewport);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+  const setHelpOpen = useAppStore((s) => s.setHelpOpen);
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const fitToContent = useBoardStore((s) => s.fitToContent);
@@ -326,6 +327,15 @@ export default function BoardToolbar() {
         title="Settings"
       >
         ⚙️
+      </button>
+
+      {/* Help */}
+      <button
+        onClick={() => setHelpOpen(true)}
+        style={{ ...TOOLBAR_BUTTON, background: "transparent", color: "#fff" }}
+        title="Keyboard shortcuts (?)"
+      >
+        ?
       </button>
     </div>
   );

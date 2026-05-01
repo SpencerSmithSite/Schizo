@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Keyboard shortcuts help dialog: press `?` or click the `?` toolbar button to open an overlay listing every keyboard shortcut and tip.
 - Fit-to-view: press `F` or click the ⊡ toolbar button to zoom and pan so all items on the current board are visible at once.
 - Select all: `⌘A` / `Ctrl+A` selects every item on the board.
 - Copy / paste: `⌘C` / `Ctrl+C` copies selected items; `⌘V` / `Ctrl+V` pastes them offset by 32 px with fresh IDs.

@@ -8,6 +8,7 @@ import ConnectionStylePanel from "./components/board/ConnectionStylePanel";
 import OllamaChat from "./components/ui/OllamaChat";
 import OllamaSettings from "./components/ui/OllamaSettings";
 import SearchPanel from "./components/ui/SearchPanel";
+import HelpDialog from "./components/ui/HelpDialog";
 import { getAdapter } from "./utils/adapter";
 import { nanoid } from "./utils/nanoid";
 import { buildOnboardingBoard } from "./utils/onboarding";
@@ -46,6 +47,8 @@ export default function App() {
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const searchOpen = useAppStore((s) => s.searchOpen);
   const setSearchOpen = useAppStore((s) => s.setSearchOpen);
+  const helpOpen = useAppStore((s) => s.helpOpen);
+  const setHelpOpen = useAppStore((s) => s.setHelpOpen);
   const boardNavStack = useAppStore((s) => s.boardNavStack);
   const allBoards = useAppStore((s) => s.boards);
   const parentBoardName = boardNavStack.length > 0
@@ -173,6 +176,13 @@ export default function App() {
 
       // Skip remaining shortcuts when a modifier is held or focus is in an input
       if (e.metaKey || e.ctrlKey || e.altKey || inInput) return;
+
+      // ? — toggle help dialog
+      if (e.key === "?" || e.key === "/") {
+        e.preventDefault();
+        setHelpOpen(!useAppStore.getState().helpOpen);
+        return;
+      }
 
       // N — add note
       if (e.key === "n" || e.key === "N") {
@@ -346,7 +356,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [addItem, removeItem, clearSelection, setMode, undo, redo, selectAll, copyToClipboard, pasteFromClipboard, removeConnection, setSelectedConnection, setSearchOpen, fitToContent]);
+  }, [addItem, removeItem, clearSelection, setMode, undo, redo, selectAll, copyToClipboard, pasteFromClipboard, removeConnection, setSelectedConnection, setSearchOpen, fitToContent, setHelpOpen]);
 
   // ── Auto-save on changes (debounced) ──────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -510,6 +520,7 @@ export default function App() {
       {chatOpen && <OllamaChat onClose={() => setChatOpen(false)} />}
       {settingsOpen && <OllamaSettings onClose={() => setSettingsOpen(false)} />}
       {searchOpen && <SearchPanel />}
+      {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
     </div>
   );
 }
