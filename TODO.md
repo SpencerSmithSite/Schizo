@@ -59,5 +59,8 @@
 - [x] Board templates (Cold Case, Research, Mood Board…)
 - [x] Onboarding example board
 
+### V2 Polish
+- [x] Keyboard shortcuts help dialog (`?` key / `?` toolbar button)
+
 ### V3
 - [ ] Local-network collaboration (mDNS peer discovery + CRDTs)
